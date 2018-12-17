@@ -1,0 +1,85 @@
+#!/usr/bin/env php
+<?php
+	if($argc != 2) {
+		die("usage: {$argv[0]} /path/to/font.bdf".PHP_EOL);
+	}
+
+	if(!file_exists($argv[1])) {
+		die("file \"{$argv[1]}\" not found\n");
+	}
+
+	$file = $argv[1];
+
+	$bdf = explode(PHP_EOL, file_get_contents($file));
+
+	/* the number of characters we've started processing so far */
+	$chars = 0;
+	/* how many lines of Bitmap are left? */
+	$remaining = 0;
+
+	/* actual per-character bitmap data */
+	$bitmaps = [];
+	/* the lookup table */
+	$lookup = [];
+
+	/* output string */
+	$out = "#include <stdint.h>".PHP_EOL.PHP_EOL;
+
+	/* loop each BDF line */
+	foreach($bdf as $line) {
+		/* if there are Bitmap lines left to process, do it */
+		if($remaining > 0) {
+			$remaining--;
+			/* $chars is increased for every ENCODING statement, so we have to decrement */
+			$bitmaps[$chars - 1][15 - $remaining] = $line;
+
+			continue;
+		}
+
+		/* split the line by spaces */
+		$token = explode(' ', $line);
+
+		switch($token[0]) {
+			case "ENCODING":
+				/* set the character in the lookup to its index into the data */
+				$lookup[$token[1]] = $chars;
+				$chars++;
+				break;
+			case "BITMAP":
+				/* the next 16 lines are bitmap info */
+				$remaining = 16;
+				break;
+			default:
+				break;
+		}
+	}
+
+	/* generate the font data table */
+	$out .= "const uint8_t framebuffer_font[] = {".PHP_EOL."\t";
+
+	/* dump all our Bitmap data into the array */
+	foreach($bitmaps as $bitmap) {
+		foreach($bitmap as $item) {
+			$out .= "0x".$item.",";
+		}
+	}
+
+	$out .= PHP_EOL."};".PHP_EOL.PHP_EOL;
+
+	/* generate the lookup table */
+	$out .= "const uint16_t framebuffer_font_index[] = {".PHP_EOL."\t";
+
+	/* loop U+0000 to U+2699 */
+	for($i = 0; $i < 9840; $i++) {
+		$out .= (isset($lookup[$i])) ? $lookup[$i]."," : "0,";
+	}
+
+	/* loop U+FB00 to U+FFFF */
+	for($i = 64256; $i <= 0xFFFF; $i++) {
+		$out .= (isset($lookup[$i])) ? $lookup[$i]."," : "0,";
+	}
+
+	$out .= PHP_EOL."};".PHP_EOL;
+
+	echo $out;
+?>
