@@ -1,0 +1,39 @@
+SHELL			:= /bin/bash
+COM_COLOR		:= $(shell tput setaf 4)
+OBJ_COLOR		:= $(shell tput setaf 6)
+OK_COLOR		:= $(shell tput setaf 2)
+ERROR_COLOR		:= $(shell tput setaf 1)
+WARN_COLOR		:= $(shell tput setaf 3)
+NO_COLOR		:= \033[m
+
+OK_STRING		:= "[OK]"
+ERROR_STRING	:= "[ERROR]"
+WARN_STRING		:= "[WARNING]"
+
+define run
+	mkdir -p $(dir $@)
+	printf "%b" "$(COM_COLOR)$(1)$(OBJ_COLOR) $@$(NO_COLOR)\r"; \
+	$(2) 2> $@.log; \
+	RESULT=$$?; \
+	if [ $$RESULT -ne 0 ]; then \
+		printf "%-80b%b" "$(shell tput bold)$(COM_COLOR)$(1)$(OBJ_COLOR) $@" "$(ERROR_COLOR)$(ERROR_STRING)$(NO_COLOR)\n"; \
+	elif [ -s $@.log ]; then \
+		printf "%-80b%b" "$(shell tput bold)$(COM_COLOR)$(1)$(OBJ_COLOR) $@" "$(WARN_COLOR)$(WARN_STRING)$(NO_COLOR)\n"; \
+	else  \
+		printf "%-80b%b" "$(shell tput bold)$(COM_COLOR)$(1)$(OBJ_COLOR) $@" "$(OK_COLOR)$(OK_STRING)$(NO_COLOR)\n"; \
+	fi; \
+	cat $@.log; \
+	rm -f $@.log; \
+	exit $$RESULT
+endef
+
+define run_normal
+	printf "%-80b%b" "$(shell tput bold)$(COM_COLOR)$(1)$(OBJ_COLOR) $@" "$(OK_COLOR)$(OK_STRING)$(NO_COLOR)\n"; \
+	$(2);
+endef
+
+include config/compiler
+include config/output-mode
+include config/ovmf
+include config/qemu
+include config/uni-vga

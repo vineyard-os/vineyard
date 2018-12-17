@@ -1,0 +1,14 @@
+# switch output modes: dir (outputs into directory at bin/hdd/), cd (build an ISO image) or fat (creates a FAT32 image at bin/hdd.img)
+MODE			?= dir
+
+ifeq ($(MODE),fat)
+	EMU_TARGET	 = -drive if=ide,format=raw,file=$(HDD)
+	EMU_REQ		+= $(HDD)
+else ifeq ($(MODE),dir)
+	EMU_TARGET	:= -drive format=raw,file=fat:rw:bin/hdd
+else ifeq ($(MODE),cd)
+	EMU_TARGET	 = -cdrom $(CD)
+	EMU_REQ		+= $(CD)
+else
+	$(error)
+endif

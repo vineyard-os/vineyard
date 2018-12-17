@@ -1,0 +1,3 @@
+[submodule "third-party/zircon-uefi"]
+	path = third-party/zircon-uefi
+	url = https://github.com/no92/zircon-uefi

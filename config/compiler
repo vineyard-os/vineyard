@@ -1,0 +1,30 @@
+CFLAGS			?= -O2 -g
+CFLAGS			:= $(CFLAGS) -pipe -Wall -Wbad-function-cast -Wconversion -Werror -Wextra -Wformat=2 -Wformat-security -Winit-self
+CFLAGS			:= $(CFLAGS) -Wparentheses -Winline -Wmissing-braces -Wmissing-declarations -Wmissing-field-initializers
+CFLAGS			:= $(CFLAGS) -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wredundant-decls -Wshadow -Wstrict-prototypes
+CFLAGS			:= $(CFLAGS) -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused -Wwrite-strings
+CFLAGS			:= $(CFLAGS) -mno-red-zone -ffreestanding -fno-stack-protector -MMD -MP -std=gnu11 -mno-mmx -mno-sse -mno-sse2
+
+AS				:= yasm
+
+ASFLAGS			:= -felf64
+EFI_ASFLAGS		:= -fwin64
+
+ifndef USE_GCC
+	CC			:= clang
+	LD			:= ld.lld
+	EFI_CC		:= $(CC)
+	EFI_LD		:= lld-link
+	EFI_CFLAGS	:= $(CFLAGS) -flto -target x86_64-pc-win32-coff
+	EFI_LDFLAGS	 = -subsystem:efi_application -nodefaultlib -dll -WX -entry:efi_main -out:$(LOADER)
+	CFLAGS		:= $(CFLAGS) -target x86_64-pc-elf
+else
+	CC			:= x86_64-elf-gcc
+	LD			:= $(CC)
+	EFI_CC		:= x86_64-w64-mingw32-gcc
+	EFI_LD		:= $(EFI_CC)
+	CFLAGS		:= $(CFLAGS) -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
+	LDFLAGS		:= $(LDFLAGS) -z max-page-size=0x1000 -nostdlib -lgcc -ffreestanding
+	EFI_CFLAGS	:= $(CFLAGS)
+	EFI_LDFLAGS	 = -nostdlib -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main -o $(LOADER)
+endif

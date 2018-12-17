@@ -1,0 +1,3 @@
+UNI-VGA_URL		:= http://www.inp.nsk.su/~bolkhov/files/fonts/univga/uni-vga.tgz
+UNI-VGA_DIR		:= third-party/uni-vga
+UNI-VGA			:= $(UNI-VGA_DIR)/u_vga16.bdf
