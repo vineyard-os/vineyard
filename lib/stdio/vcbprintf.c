@@ -55,10 +55,10 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 		}
 
 		bool flag_hash = false;
-		bool flag_minus __attribute__((unused)) = false;
+		bool flag_minus = false;
 		bool flag_plus = false;
 		bool flag_space = false;
-		bool flag_zero __attribute__((unused)) = false;
+		bool flag_zero = false;
 
 		while(*format) {
 			switch(*format++) {

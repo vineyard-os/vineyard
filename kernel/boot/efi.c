@@ -6,10 +6,7 @@ void efi_init(void) {
 	efi_status status;
 
 	status = info.st->BootServices->SetWatchdogTimer(0, 0, 0, NULL);
-	EFIERR(status);
-
 	status = info.st->ConOut->ClearScreen(info.st->ConOut);
-	EFIERR(status);
 
 	framebuffer_init();
 

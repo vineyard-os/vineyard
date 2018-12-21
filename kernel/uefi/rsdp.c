@@ -2,7 +2,7 @@
 #include <string.h>
 #include <uefi.h>
 
-void *rsdp = NULL;
+static void *rsdp = NULL;
 
 efi_status efi_get_rsdp() {
 	efi_guid acpi_guid = ACPI_20_TABLE_GUID;

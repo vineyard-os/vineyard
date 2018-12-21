@@ -5,7 +5,7 @@
 #include <efistub/uefi.h>
 #include <efistub/virt.h>
 
-uintptr_t *pml4 = NULL;
+static uintptr_t *pml4 = NULL;
 
 efi_status efi_virt_map(uintptr_t physical, uintptr_t virt, size_t pages, uintptr_t flags) {
 	if(!pml4) {
@@ -50,7 +50,7 @@ efi_status efi_virt_map(uintptr_t physical, uintptr_t virt, size_t pages, uintpt
 
 	for(size_t i = 0; i < pages; i++) {
 		pml1[pml1i + i] = (physical + (i << 12)) | flags;
-		asm volatile ("invlpg (%0)" : : "r" (virt + (i << 12)) : "memory");
+		__asm volatile ("invlpg (%0)" : : "r" (virt + (i << 12)) : "memory");
 
 		if(pml1i + i > 511) {
 			efi_virt_map(physical + (i << 12), virt + (i << 12), pages - i, flags);

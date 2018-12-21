@@ -1,8 +1,8 @@
 CFLAGS			?= -O2 -g
 CFLAGS			:= $(CFLAGS) -pipe -Wall -Wbad-function-cast -Wconversion -Werror -Wextra -Wformat=2 -Wformat-security -Winit-self
-CFLAGS			:= $(CFLAGS) -Wparentheses -Winline -Wmissing-braces -Wmissing-declarations -Wmissing-field-initializers
+CFLAGS			:= $(CFLAGS) -Wparentheses -Winline -Wmissing-braces -Wmissing-declarations -Wmissing-variable-declarations -Wmissing-field-initializers
 CFLAGS			:= $(CFLAGS) -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wredundant-decls -Wshadow -Wstrict-prototypes
-CFLAGS			:= $(CFLAGS) -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused -Wwrite-strings
+CFLAGS			:= $(CFLAGS) -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused -Wused-but-marked-unused -Wwrite-strings
 CFLAGS			:= $(CFLAGS) -mno-red-zone -ffreestanding -fno-stack-protector -MMD -MP -std=gnu11 -mno-mmx -mno-sse -mno-sse2
 
 AS				:= yasm

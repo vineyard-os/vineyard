@@ -4,7 +4,6 @@
 #include <efistub/elf.h>
 #include <efistub/elf64.h>
 #include <efistub/fs.h>
-#include <efistub/loader.h>
 #include <efistub/virt.h>
 #include <efistub/uefi.h>
 #include <stdbool.h>
@@ -25,14 +24,14 @@ efi_status efi_main(efi_handle image_handle, efi_system_table *systab) {
 	efi_msr_write(0xC0000080, efi_msr_read(0xC0000080) | 0x800);
 
 	status = st->BootServices->SetWatchdogTimer(0, 0, 0, NULL);
-	ERR(status);
+	EFIERR(status);
 
 	status = st->ConOut->ClearScreen(st->ConOut);
-	ERR(status);
+	EFIERR(status);
 
 	efi_file_protocol *kernel;
 	status = efi_fs_load_kernel(&kernel);
-	ERR(status);
+	EFIERR(status);
 
 	/* map a complete copy of the binary into memory (used for parsing by the kernel itself) */
 	void *copy = 0;
@@ -46,7 +45,7 @@ efi_status efi_main(efi_handle image_handle, efi_system_table *systab) {
 	}
 
 	status = st->BootServices->AllocatePool(EfiLoaderData, info_len, (void **) &info);
-	ERR(status);
+	EFIERR(status);
 
 	status = kernel->GetInfo(kernel, &guid, &info_len, info);
 
@@ -57,14 +56,14 @@ efi_status efi_main(efi_handle image_handle, efi_system_table *systab) {
 	}
 
 	status = kernel->Read(kernel, &info->FileSize, copy);
-	ERR(status);
+	EFIERR(status);
 
 	status = kernel->SetPosition(kernel, 0);
-	ERR(status);
+	EFIERR(status);
 
 	elf64_ehdr_t header;
 	status = efi_fs_read_header(kernel, &header);
-	ERR(status);
+	EFIERR(status);
 
 	/* TODO: this only checks some params choosen randomly; properly check everything we should! */
 	if(header.e_ident[EI_MAG0] == EI_MAG0_VALUE && header.e_ident[EI_MAG1] == EI_MAG1_VALUE && header.e_ident[EI_MAG2] == EI_MAG2_VALUE && header.e_ident[EI_MAG3] == EI_MAG3_VALUE) {

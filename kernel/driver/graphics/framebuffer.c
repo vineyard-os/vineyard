@@ -14,6 +14,13 @@ static size_t offset_5;
 static size_t offset_6;
 static size_t offset_7;
 
+uint32_t *framebuffer_lfb = NULL;
+size_t framebuffer_lfb_size = 0;
+uint32_t framebuffer_width = 0;
+uint32_t framebuffer_height = 0;
+uint32_t framebuffer_pitch = 0;
+uint32_t framebuffer_bpp = 0;
+
 static bool framebuffer_setup(efi_graphics_output_protocol *gop) {
 	size_t max_w = 0;
 	size_t max_h = 0;
