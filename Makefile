@@ -30,7 +30,12 @@ clean:
 	$(call run,"RM",rm -f $(KERNEL) $(LOADER) $(KERNEL_OBJ) $(LOADER_OBJ) $(KERNEL_DEP))
 
 clean-bin: clean
-	$(call run,"RM",rm -rf $(HDD) $(CD) iso compile_commands.json .json .deps)
+	$(call run,"RM",rm -rf $(HDD) $(CD) iso compile_commands.json .json .deps bin)
+
+clean-font:
+	$(call run,"RM", rm -f kernel/driver/graphics/font.c)
+
+distclean: clean-bin clean-font clean-uni-vga
 
 $(OVMF):
 	mkdir -p bin
@@ -41,7 +46,10 @@ $(UNI-VGA):
 	wget -qq $(UNI-VGA_URL) -O $(UNI-VGA_DIR)/uni-vga.tar.gz
 	tar xzf $(UNI-VGA_DIR)/uni-vga.tar.gz --strip-components=1 -C $(UNI-VGA_DIR)
 
-.PHONY: setup test
+clean-uni-vga:
+	$(call run,"RM", rm -rf $(UNI-VGA_DIR))
+
+.PHONY: setup test clean clean-bin clean-font clean-uni-vga
 
 .SUFFIXES:
 .SUFFIXES: .c .o

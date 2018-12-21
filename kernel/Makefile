@@ -1,6 +1,6 @@
 KERNEL_SRC_C	:= $(shell find kernel lib \( -path kernel/efistub \) -prune -o -name '*.c' -type f -print)
 KERNEL_SRC		:= $(shell find kernel lib \( -path kernel/efistub \) -prune -o -name '*.[cs]' -type f -print)
-KERNEL_SRC		:= $(filter-out kernel/font.c,$(KERNEL_SRC)) kernel/driver/graphics/font.c
+KERNEL_SRC		:= $(filter-out kernel/driver/graphics/font.c,$(KERNEL_SRC)) kernel/driver/graphics/font.c
 KERNEL_OBJ_C	:= $(addprefix bin/obj/,$(addsuffix .o,$(KERNEL_SRC_C)))
 KERNEL_OBJ		:= $(addprefix bin/obj/,$(addsuffix .o,$(KERNEL_SRC)))
 KERNEL_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
