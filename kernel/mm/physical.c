@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <boot/info.h>
+#include <boot/panic.h>
 #include <cpu/cr.h>
 #include <mm/page.h>
 #include <mm/physical.h>
@@ -9,17 +10,17 @@
 #include <string.h>
 #include <uefi.h>
 
-#define STACK_ADDR 0xFFFFFEFFFFFFF000
-#define STACK_ADDR_TEMP 0xFFFFFEFFFFFFE000
+#define STACK_SIZE 509
 
 /* packed (4096-byte = page-sized) stack for fast single-page physical allocation */
 struct mm_physical_stack {
+	uintptr_t prev;
 	/* physical address of the next stack */
-	uint64_t next;
+	uintptr_t next;
 	/* number of pages on this stack */
-	uint64_t used;
+	uintptr_t used;
 	/* list of free pages */
-	uint64_t data[510];
+	uintptr_t data[STACK_SIZE];
 } __attribute__((packed));
 
 /* make sure that the stack struct is actually the size it is supposed to be (4096 bytes) */
@@ -58,7 +59,7 @@ static uint64_t root_stack_phys = (uintptr_t) &root_stack - 0xFFFFFFFF80000000 +
 /* virtual address of the currently mapped stack */
 static struct mm_physical_stack *stack = (struct mm_physical_stack *) STACK_ADDR;
 
-static void mm_physical_next_stack(uint64_t addr) {
+static void mm_physical_next_stack(uintptr_t addr) {
 	mm_physical_stack_pml1[511] = addr | PAGE_PRESENT | PAGE_WRITE;
 	mm_tlb_invlpg(STACK_ADDR);
 }
@@ -94,13 +95,14 @@ static void mm_physical_init_stack(void) {
 	memset(root_stack, 0, sizeof(*root_stack));
 }
 
-static uint64_t mm_physical_create_stack(void) {
-	uint64_t phys = mm_physical_get();
+static uint64_t mm_physical_create_stack(uintptr_t phys) {
 	struct mm_physical_stack *new = (struct mm_physical_stack *) STACK_ADDR_TEMP;
+	uintptr_t current = mm_physical_stack_pml1[511] & 0x000FFFFFFFFFF000;
 
 	mm_physical_stack_pml1[510] = phys | PAGE_PRESENT | PAGE_WRITE;
 
-	memset(new, 0, 16);
+	memset(new, 0, 24);
+	memcpy(new, &current, 8);
 
 	mm_physical_stack_pml1[510] = 0;
 	mm_tlb_invlpg(STACK_ADDR_TEMP);
@@ -116,17 +118,21 @@ uint64_t mm_physical_get(void) {
 
 		return ret;
 	} else {
-		return 0;
+		if(stack->prev) {
+			mm_physical_next_stack(stack->prev);
+		} else {
+			panic("out of physical memory");
+		}
+
+		return mm_physical_get();
 	}
 }
 
 void mm_physical_mark_free(uint64_t addr) {
-	if(stack && stack->used < 510) {
+	if(stack && stack->used < STACK_SIZE) {
 		stack->data[stack->used++] = addr;
 	} else {
-		if(!stack || stack->used >= 510) {
-			stack->next = mm_physical_create_stack();
-		}
+		stack->next = mm_physical_create_stack(mm_physical_get());
 
 		mm_physical_next_stack(stack->next);
 		stack->data[stack->used++] = addr;

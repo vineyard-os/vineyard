@@ -20,6 +20,7 @@ uint32_t framebuffer_width = 0;
 uint32_t framebuffer_height = 0;
 uint32_t framebuffer_pitch = 0;
 uint32_t framebuffer_bpp = 0;
+bool framebuffer_ready = false;
 
 static bool framebuffer_setup(efi_graphics_output_protocol *gop) {
 	size_t max_w = 0;
@@ -80,6 +81,8 @@ void framebuffer_init(void) {
 	offset_5 = offset_4 + offset_1;
 	offset_6 = offset_4 + offset_2;
 	offset_7 = offset_4 + offset_3;
+
+	framebuffer_ready = true;
 }
 
 void framebuffer_set(size_t h, size_t v, uint32_t color) {

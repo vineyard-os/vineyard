@@ -73,9 +73,17 @@ void mm_page_tables_setup(void) {
 	pml2_pmm[pml2i_pmm] = PHY(pml1_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
 	pml1_pmm[511] = mm_physical_stack_pml1[511];
 
+	framebuffer_ready = false;
+
 	msr_write(0xC0000080, msr_read(0xC0000080) | 0x800);
 	cr4_write(cr4_read() | 0x10);
 	cr3_write(PHY(pml4));
 
+	struct vm_indices i;
+	mm_virtual_indices(&i, STACK_ADDR);
+	mm_physical_stack_pml1 = i.pml1;
+
 	mm_virtual_map((uintptr_t) framebuffer_lfb, (uintptr_t) framebuffer_lfb, framebuffer_lfb_size >> 12, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+
+	framebuffer_ready = true;
 }

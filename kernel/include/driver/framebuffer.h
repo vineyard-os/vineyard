@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -15,6 +16,7 @@ extern uint32_t framebuffer_width;
 extern uint32_t framebuffer_height;
 extern uint32_t framebuffer_pitch;
 extern uint32_t framebuffer_bpp;
+extern bool framebuffer_ready;
 
 void framebuffer_init(void);
 void framebuffer_set(size_t h, size_t v, uint32_t color);

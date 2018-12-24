@@ -46,6 +46,10 @@ static void terminal_refresh(void) {
 }
 
 size_t terminal_putc(const char *c) {
+	if(!framebuffer_ready) {
+		return 0;
+	}
+
 	if(c[0] == '\n') {
 		terminal_x = 0;
 		terminal_y += terminal_char_height;
