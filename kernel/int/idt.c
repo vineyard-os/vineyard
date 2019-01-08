@@ -69,6 +69,31 @@ void idt_init(void) {
 	idt_set(30, &isr_handle_30, 0x8E);
 	idt_set(31, &isr_handle_31, 0x8E);
 
+	idt_set(32, &isr_handle_irq0, 0x8E);
+	idt_set(33, &isr_handle_irq1, 0x8E);
+	idt_set(34, &isr_handle_irq2, 0x8E);
+	idt_set(35, &isr_handle_irq3, 0x8E);
+	idt_set(36, &isr_handle_irq4, 0x8E);
+	idt_set(37, &isr_handle_irq5, 0x8E);
+	idt_set(38, &isr_handle_irq6, 0x8E);
+	idt_set(39, &isr_handle_irq7, 0x8E);
+	idt_set(40, &isr_handle_irq8, 0x8E);
+	idt_set(41, &isr_handle_irq9, 0x8E);
+	idt_set(42, &isr_handle_irq10, 0x8E);
+	idt_set(43, &isr_handle_irq11, 0x8E);
+	idt_set(44, &isr_handle_irq12, 0x8E);
+	idt_set(45, &isr_handle_irq13, 0x8E);
+	idt_set(46, &isr_handle_irq14, 0x8E);
+	idt_set(47, &isr_handle_irq15, 0x8E);
+	idt_set(48, &isr_handle_irq16, 0x8E);
+	idt_set(49, &isr_handle_irq17, 0x8E);
+	idt_set(50, &isr_handle_irq18, 0x8E);
+	idt_set(51, &isr_handle_irq19, 0x8E);
+	idt_set(52, &isr_handle_irq20, 0x8E);
+	idt_set(53, &isr_handle_irq21, 0x8E);
+	idt_set(54, &isr_handle_irq22, 0x8E);
+	idt_set(55, &isr_handle_irq23, 0x8E);
+
 	idtr.base = (uintptr_t) idt;
 	idtr.limit = sizeof(idt) - 1;
 

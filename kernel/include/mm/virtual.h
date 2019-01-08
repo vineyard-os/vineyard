@@ -31,10 +31,16 @@ struct vm_indices {
 };
 
 vy_status_t mm_virtual_init(void);
-vy_status_t mm_virtual_map(uintptr_t phys, uintptr_t virt, size_t pages, uintptr_t flags);
-void mm_virtual_range_set(uintptr_t addr, size_t len, uintptr_t flags);
-uintptr_t mm_virtual_alloc(size_t pages);
-void mm_virtual_dump(void);
-size_t mm_virtual_free(uintptr_t addr);
-uintptr_t mm_virtual_get_phys(uintptr_t virt);
+
 vy_status_t mm_virtual_indices(struct vm_indices *i, uintptr_t addr);
+vy_status_t mm_virtual_map(uintptr_t phys, uintptr_t virt, size_t pages, uintptr_t flags);
+
+void mm_virtual_range_set(uintptr_t addr, size_t len, uintptr_t flags);
+
+uintptr_t mm_virtual_alloc(size_t pages);
+size_t mm_virtual_free(uintptr_t addr);
+
+uintptr_t mm_virtual_get_phys(uintptr_t virt);
+uintptr_t mm_virtual_get_flags(uintptr_t virt);
+
+void mm_virtual_dump(void);

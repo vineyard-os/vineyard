@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <driver/uart.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -6,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <vy.h>
 
 static size_t callback_placeholder(void *ctx, const char *string, size_t length) {
 	(void) ctx;
@@ -17,6 +19,10 @@ static size_t callback_placeholder(void *ctx, const char *string, size_t length)
 int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_t length), const char *format, va_list args) {
 	if(!callback) {
 		callback = callback_placeholder;
+	}
+
+	if(!format || (uintptr_t) format == 0xffffffffffffffff) {
+		return 0;
 	}
 
 	size_t written = 0;
@@ -84,6 +90,19 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 			goto width_read;
 		}
 
+		size_t precision = (size_t) -1;
+
+		if(*format == '.') {
+			format++;
+			precision = 0;
+
+			while(*format >= '0' && *format <= '9') {
+				precision *= 10;
+				precision += (size_t) (*format - '0');
+				format++;
+			}
+		}
+
 		enum length {
 			LENGTH_SHORT_SHORT,
 			LENGTH_SHORT,
@@ -145,6 +164,7 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 			case 's': {
 				const char *string = va_arg(args, const char *);
 				size_t len = strlen(string);
+				len = (precision < len) ? precision : len;
 
 				if(callback(ctx, string, len) != len) {
 					return -1;
@@ -251,7 +271,8 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 					buf_length++;
 				}
 
-				size_t pad = ((buf_length + prefix_len) > width) ? 0 : width - (buf_length + prefix_len);
+				size_t printed_width = (precision != (size_t) -1 && precision > buf_length) ? precision : buf_length;
+				size_t pad = ((printed_width + prefix_len) > width) ? 0 : width - (printed_width + prefix_len);
 
 				for(size_t i = buf_length; i > 0; i--) {
 					buf[i-1] = conv[value % base];
@@ -274,7 +295,7 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 					return -1;
 				}
 
-				if(pad_char == '0') {
+				if(pad_char == '0' && !flag_minus) {
 					const char *pad_string = "0";
 					for(size_t i = 0; i < pad; i++) {
 						if(callback(ctx, pad_string, 1) != 1) {
@@ -283,9 +304,26 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 					}
 				}
 
+				if(printed_width > buf_length) {
+					for(size_t i = 0; i < (printed_width - buf_length); i++) {
+						if(callback(ctx, "0", 1) != 1) {
+							return -1;
+						}
+					}
+				}
+
 				/* print the integer string */
 				if(callback(ctx, buf, buf_length) != buf_length) {
 					return -1;
+				}
+
+				if(flag_minus) {
+					const char *pad_string = " ";
+					for(size_t i = 0; i < pad; i++) {
+						if(callback(ctx, pad_string, 1) != 1) {
+							return -1;
+						}
+					}
 				}
 
 				written += buf_length;

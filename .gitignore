@@ -1,6 +1,8 @@
 bin/
 third-party/
 kernel/driver/graphics/font.c
+kernel/acpica/
+kernel/include/acpica/
 
 compile_commands.json
 

@@ -35,7 +35,7 @@ clean-bin: clean
 clean-font:
 	$(call run,"RM", rm -f kernel/driver/graphics/font.c)
 
-distclean: clean-bin clean-font clean-uni-vga
+distclean: clean-bin clean-font clean-uni-vga clean-acpica
 
 $(OVMF):
 	mkdir -p bin
@@ -46,10 +46,24 @@ $(UNI-VGA):
 	wget -qq $(UNI-VGA_URL) -O $(UNI-VGA_DIR)/uni-vga.tar.gz
 	tar xzf $(UNI-VGA_DIR)/uni-vga.tar.gz --strip-components=1 -C $(UNI-VGA_DIR)
 
+$(ACPICA_DIR):
+	wget $(ACPICA_URL) -O $(ACPICA_TAR)
+	mkdir -p $(ACPICA_DIR)
+	tar -xf $(ACPICA_TAR) -C $(ACPICA_DIR) --strip-components=1
+	mkdir -p kernel/acpica
+	cp $(ACPICA_DIR)/source/components/{dispatcher,events,executer,hardware,parser,namespace,utilities,tables,resources}/*.c kernel/acpica/
+	mkdir -p kernel/include/acpica
+	cp -R $(ACPICA_DIR)/source/include/* kernel/include/acpica/
+	patch -p0 < patches/acpica.patch
+	php util/acpica-fixup kernel/acpica
+
 clean-uni-vga:
 	$(call run,"RM", rm -rf $(UNI-VGA_DIR))
 
-.PHONY: setup test clean clean-bin clean-font clean-uni-vga
+clean-acpica:
+	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR))
+
+.PHONY: setup test clean clean-bin clean-font clean-uni-vga clean-acpica
 
 .SUFFIXES:
 .SUFFIXES: .c .o

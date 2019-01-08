@@ -1,3 +1,3 @@
-[submodule "third-party/zircon-uefi"]
-	path = third-party/zircon-uefi
+[submodule "kernel/include/efi"]
+	path = kernel/include/efi
 	url = https://github.com/no92/zircon-uefi

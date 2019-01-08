@@ -1,3 +1,4 @@
+#include <acpi.h>
 #include <boot/info.h>
 #include <cpu/cpu.h>
 #include <efi.h>
@@ -19,6 +20,7 @@ efi_status main(efi_handle h, efi_system_table *st, uintptr_t vy_unused copy) {
 	cpu_bsp_init();
 	mm_physical_init();
 	mm_virtual_init();
+	acpi_init();
 
 	printf("vineyard\n");
 

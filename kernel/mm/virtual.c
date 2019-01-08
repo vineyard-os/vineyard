@@ -22,7 +22,7 @@
 #define PML3_SHIFT 30
 #define PML4_SHIFT 39
 
-#define VM_FOREACH(x) for(struct vm_node *(x) = list.head; (x); (x) = (x)->next)
+#define VM_FOREACH(x) for(struct vm_node *x = list.head; x; x = x->next)
 
 struct vm_node {
 	struct vm_node *next;
@@ -115,6 +115,19 @@ uintptr_t mm_virtual_get_phys(uintptr_t virt) {
 	return addr;
 }
 
+uintptr_t mm_virtual_get_flags(uintptr_t virt) {
+	struct vm_indices i;
+	uintptr_t flags = 0;
+
+	mm_virtual_indices(&i, virt);
+
+	if(i.pml4[i.pml4i] & PAGE_PRESENT && i.pml3[i.pml3i] & PAGE_PRESENT && i.pml2[i.pml2i] & PAGE_PRESENT && i.pml1[i.pml1i] & PAGE_PRESENT) {
+		flags = (i.pml1[i.pml1i] & 0xfff0000000000fff);
+	}
+
+	return flags;
+}
+
 static void mm_virtual_insert_after(struct vm_node *after, struct vm_node *new) {
 	if(!after || !new) {
 		return;
@@ -122,14 +135,13 @@ static void mm_virtual_insert_after(struct vm_node *after, struct vm_node *new) 
 
 	new->next = after->next;
 	new->prev = after;
+	after->next = new;
 
-	if(!after->next) {
+	if(!new->next) {
 		list.tail = new;
 	} else {
-		after->next->prev = new;
+		new->next->prev = new;
 	}
-
-	after->next = new;
 
 	list.nodes++;
 }
@@ -155,7 +167,7 @@ static vy_unused void mm_virtual_insert_before(struct vm_node *b, struct vm_node
 	list.nodes++;
 }
 
-static void mm_virtual_remove(struct vm_node *node) {
+vy_unused static void mm_virtual_remove(struct vm_node *node) {
 	if(!node) {
 		return;
 	}
@@ -271,7 +283,7 @@ void mm_virtual_range_set(uintptr_t addr, size_t len, uintptr_t flags) {
 	}
 
 	printf("prev: start=%#018lx, len=%#zx, %s\n", prev->start, prev->len, (prev->flags & VM_USED) ? "used" : "free");
-	printf("start_aliged=%u, end_aliged=%u, within_prev=%u, start_beyond_prev_end=%u, end_before_next=%u\n", start_aliged, end_aliged, within_prev, start_beyond_prev_end, end_before_next);
+	// printf("start_aliged=%u, end_aliged=%u, within_prev=%u, start_beyond_prev_end=%u, end_before_next=%u\n", start_aliged, end_aliged, within_prev, start_beyond_prev_end, end_before_next);
 	panic("unhandled overlap addr=%#018lx len=%#zx flags=%#lx", addr, len, flags);
 }
 
@@ -282,6 +294,14 @@ void mm_virtual_dump(void) {
 }
 
 uintptr_t mm_virtual_alloc(size_t pages) {
+	if(!pages) {
+		return 0;
+	}
+
+#ifdef VMM_DEBUG
+	printf("[vmm]	%zu pages\n", pages);
+#endif
+
 	struct vm_node *alloc = NULL;
 	size_t size = pages << 12;
 
@@ -300,19 +320,36 @@ uintptr_t mm_virtual_alloc(size_t pages) {
 		alloc->flags &= ~VM_FREE;
 		alloc->flags |= VM_USED;
 
+#ifdef VMM_DEBUG
+		mm_virtual_dump();
+		printf("----------------------------------------\n");
+#endif
 		return alloc->start;
 	} else {
 		struct vm_node *new = mm_slab_alloc(cache);
 
+#ifdef VMM_DEBUG
+		printf("[vmm]	alloc start = %#018lx, len = %zx [%s]\n", alloc->start, alloc->len, (alloc->flags & VM_USED) ? "used" : "free");
+		if(alloc->next) printf("[vmm]	alloc->next start = %#018lx, len = %zx [%s]\n", alloc->next->start, alloc->next->len, (alloc->next->flags & VM_USED) ? "used" : "free");
+#endif
+
 		new->start = alloc->start + size;
 		new->len = alloc->len - size;
 		new->flags = alloc->flags;
+#ifdef VMM_DEBUG
+		printf("[vmm]	new start = %#018lx, len = %zx [%s]\n", new->start, new->len, (new->flags & VM_USED) ? "used" : "free");
+#endif
 
 		alloc->len = size;
 		alloc->flags &= ~VM_FREE;
 		alloc->flags |= VM_USED;
 
 		mm_virtual_insert_after(alloc, new);
+
+#ifdef VMM_DEBUG
+		mm_virtual_dump();
+		printf("----------------------------------------\n");
+#endif
 
 		return alloc->start;
 	}
@@ -334,21 +371,36 @@ size_t mm_virtual_free(uintptr_t addr) {
 		return 0;
 	}
 
+#ifdef VMM_DEBUG
+	printf("[vmm]	freeing %#018lx (len %zu)\n", addr, free->len);
+#endif
+
 	free->flags &= ~VM_USED;
 	free->flags |= VM_FREE;
 
-	if(free->prev && (free->prev->flags == free->flags)) {
-		free->start = free->prev->start;
-		free->len += free->prev->len;
-		mm_virtual_remove(free->prev);
-		mm_slab_free(cache, free->prev);
-	}
+	/* TODO: I'm probably just stupid but this breaks somewhere (i.e. infinite loop). Idea: fix this somehow */
+	// if(free->prev && (free->prev->flags == free->flags)) {
+	// 	uintptr_t tmp_start = free->prev->start;
+	// 	size_t tmp_len = free->prev->len;
+	// 	mm_virtual_remove(free->prev);
+	// 	mm_slab_free(cache, free->prev);
+	//
+	// 	free->start = tmp_start;
+	// 	free->len += tmp_len;
+	// }
+	//
+	// if(free->next && (free->next->flags == free->flags)) {
+	// 	size_t tmp_len = free->next->len;
+	// 	mm_virtual_remove(free->next);
+	// 	mm_slab_free(cache, free->next);
+	//
+	// 	free->len += tmp_len;
+	// }
 
-	if(free->next && (free->next->flags == free->flags)) {
-		free->len += free->next->len;
-		mm_virtual_remove(free->next);
-		mm_slab_free(cache, free->next);
-	}
+#ifdef VMM_DEBUG
+	mm_virtual_dump();
+	printf("----------------------------------------\n");
+#endif
 
 	return ret;
 }

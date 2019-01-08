@@ -1,0 +1,16 @@
+#!/usr/bin/env php
+<?php
+	if(!file_exists($argv[1])) {
+		die("File not found");
+	}
+
+	$files = scandir($argv[1]);
+
+	foreach($files as $file) {
+		if($file == "." || $file == "..") {
+			continue;
+		}
+
+		file_put_contents($argv[1].'/'.$file, preg_replace('/#include "(.+)"/m', '#include <acpica/$1>', file_get_contents($argv[1].'/'.$file)));
+	}
+?>

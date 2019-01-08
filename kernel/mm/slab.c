@@ -5,6 +5,7 @@
 #include <mm/virtual.h>
 #include <stdio.h>
 #include <string.h>
+#include <vy.h>
 
 slab_cache_t vm;
 static node_t vm_node;
@@ -102,9 +103,12 @@ void *mm_slab_alloc(slab_cache_t *cache) {
 		mm_slab_create(cache);
 	}
 
+	memset((void *) addr, 0, cache->object_size);
+
 	return (void *) addr;
 }
 
+no_warn_gcc(-Wunused-but-set-variable)
 void mm_slab_free(slab_cache_t *cache, void *object) {
 	slab_t *slab = (void *) ((uintptr_t) object & ~(SLAB_SIZE - 1));
 	// printf("slab = %#018lx, slab->inuse = %zu, cache = %#018lx\n", (uintptr_t) slab, slab->inuse, (uintptr_t) cache);

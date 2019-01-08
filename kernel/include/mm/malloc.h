@@ -2,6 +2,7 @@
 
 #include <boot/panic.h>
 #include <stddef.h>
+#include <vy.h>
 
 #define ABORT panic("dlmalloc called abort()")
 #define ABORT_ON_ASSERT_FAILURE 0
@@ -35,11 +36,11 @@
 #define ENOMEM 1
 #define EINVAL 2
 
-#pragma clang diagnostic ignored "-Wstrict-prototypes"
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wnull-pointer-arithmetic"
-#pragma clang diagnostic ignored "-Wmissing-prototypes"
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-// #pragma clang diagnostic ignored "-W"
-// #pragma clang diagnostic ignored "-W"
+no_warn(-Wstrict-prototypes);
+no_warn(-Wsign-conversion);
+no_warn(-Wconversion);
+no_warn_clang(-Wnull-pointer-arithmetic);
+no_warn(-Wmissing-prototypes);
+no_warn_clang(-Wshorten-64-to-32);
+
 #include <mm/dlmalloc.h>

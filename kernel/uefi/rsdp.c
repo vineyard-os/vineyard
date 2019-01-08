@@ -2,8 +2,6 @@
 #include <string.h>
 #include <uefi.h>
 
-static void *rsdp = NULL;
-
 efi_status efi_get_rsdp() {
 	efi_guid acpi_guid = ACPI_20_TABLE_GUID;
 
@@ -11,7 +9,7 @@ efi_status efi_get_rsdp() {
 
 	for(size_t i = 0; i < info.st->NumberOfTableEntries && t; i++, t++) {
 		if(!memcmp(&acpi_guid, &t->VendorGuid, 16)) {
-			rsdp = t->VendorTable;
+			info.rsdp = t->VendorTable;
 			return EFI_SUCCESS;
 		}
 	}
