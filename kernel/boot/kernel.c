@@ -12,7 +12,11 @@ efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy);
 
 info_t info;
 
+void _init(void);
+
 efi_status main(efi_handle h, efi_system_table *st, uintptr_t vy_unused copy) {
+	_init();
+
 	info.handle = h;
 	info.st = st;
 
