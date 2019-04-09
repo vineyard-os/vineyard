@@ -86,7 +86,7 @@ static void apic_write(size_t reg, uint32_t value) {
 	apic_mmio[reg << 2] = value;
 }
 
-static void apic_ack(void) {
+void apic_ack(void) {
 	apic_write(APIC_EOI, 0);
 }
 
@@ -131,27 +131,6 @@ void apic_init(void) {
 				ioapic_init(id, addr, gsi_base);
 				break;
 			}
-			case MADT_TYPE_INTR: {
-				vy_unused uint8_t bus = entry->intr.bus;
-				uint8_t irq = entry->intr.irq;
-				uint32_t gsi = entry->intr.gsi;
-				uint16_t flags = entry->intr.flags;
-#ifdef ACPI_DEBUG
-				printf("[apic]	Interrupt Source Override: bus %hhu, IRQ source %hhu, Global System Interrupt %u, active %s %s\n", bus, irq, gsi, (flags & 2) ? "low" : "high", (flags & 8) ? "level" : "edge");
-#endif
-				uintptr_t irq_flags = 0;
-
-				if((flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_ACTIVE_LOW) {
-					flags |= REDTBL_ACTIVE_HIGH;
-				}
-
-				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL) {
-					flags |= REDTBL_TRIGGER_LEVEL;
-				}
-
-				ioapic_route(irq, irq_flags, gsi + 32);
-				break;
-			}
 			case MADT_TYPE_NMI: {
 				puts("MADT_TYPE_NMI");
 				break;
@@ -174,8 +153,47 @@ void apic_init(void) {
 				lapic_addr = entry->lapic_addr.addr;
 				break;
 			}
+			case MADT_TYPE_INTR: {
+				/* we deal with this in our second pass */
+				break;
+			}
 			default: {
-				puts("unknown type");
+				printf("[madt]	unknown type %#x\n", entry->type);
+				break;
+			}
+		}
+
+		ptr += entry->len;
+	}
+
+	ptr = (uintptr_t) madt + sizeof(ACPI_TABLE_HEADER) + sizeof(madt_extended_t);
+
+	while(ptr < end) {
+		madt_entry_t *entry = (madt_entry_t *) ptr;
+
+		switch(entry->type) {
+			case MADT_TYPE_INTR: {
+				uint8_t irq = entry->intr.irq;
+				uint32_t gsi = entry->intr.gsi;
+				uint16_t flags = entry->intr.flags;
+#ifdef ACPI_DEBUG
+				uint8_t bus = entry->intr.bus;
+				printf("[apic]	Interrupt Source Override: bus %hhu, IRQ source %hhu, Global System Interrupt %u, active %s %s\n", bus, irq, gsi, (flags & 2) ? "low" : "high", (flags & 8) ? "level" : "edge");
+#endif
+				uintptr_t irq_flags = 0;
+
+				if((flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_ACTIVE_LOW) {
+					flags |= REDTBL_ACTIVE_HIGH;
+				}
+
+				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL) {
+					flags |= REDTBL_TRIGGER_LEVEL;
+				}
+
+				ioapic_route(irq, irq_flags, gsi + 32);
+				break;
+			}
+			default: {
 				break;
 			}
 		}

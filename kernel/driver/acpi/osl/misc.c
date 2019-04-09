@@ -3,7 +3,8 @@
 #include <vy.h>
 
 UINT64 AcpiOsGetTimer(void) {
-	panic("%s unimplemented", __func__);
+	// panic("%s unimplemented", __func__);
+	return 0;
 }
 
 ACPI_STATUS AcpiOsSignal(uint32_t function, void *info vy_unused) {

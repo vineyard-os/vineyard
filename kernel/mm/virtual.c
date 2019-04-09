@@ -89,14 +89,15 @@ vy_status_t mm_virtual_map(uintptr_t phys, uintptr_t virt, size_t pages, uintptr
 		memset(i.pml1, 0, 0x1000);
 	}
 
-	for(size_t c = 0; c < pages; c++) {
-		i.pml1[i.pml1i + c] = (phys + (c << PAGE_SHIFT)) | flags;
-		mm_tlb_invlpg(virt + (c << PAGE_SHIFT));
+	size_t c = i.pml1i;
+	size_t mapped_pages = 0;
 
-		if(i.pml1i + c > 511) {
-			mm_virtual_map(phys + (c << PAGE_SHIFT), virt + (c << PAGE_SHIFT), pages - c, flags);
-			break;
-		}
+	for(c = i.pml1i; c < 512 && mapped_pages < pages; c++, mapped_pages++) {
+		i.pml1[c] = (phys + (mapped_pages << PAGE_SHIFT)) | flags;
+	}
+
+	if(mapped_pages < pages) {
+		mm_virtual_map(phys + (mapped_pages << PAGE_SHIFT), virt + (mapped_pages << PAGE_SHIFT), pages - mapped_pages, flags);
 	}
 
 	return VY_OK;
@@ -371,6 +372,10 @@ size_t mm_virtual_free(uintptr_t addr) {
 		return 0;
 	}
 
+	for(size_t i = 0; i < free->len; i += 0x1000) {
+		mm_tlb_invlpg(addr + i);
+	}
+
 #ifdef VMM_DEBUG
 	printf("[vmm]	freeing %#018lx (len %zu)\n", addr, free->len);
 #endif
@@ -411,7 +416,7 @@ vy_status_t mm_virtual_init(void) {
 	mm_page_tables_setup();
 	cache = mm_cache_create_vm(sizeof(struct vm_node));
 
-	mm_virtual_range_set(0xFFFFFE0000000000, 0x20000000000, VM_FREE);
+	mm_virtual_range_set(0xFFFFFE0000021000, 0x1FFFFFDF000, VM_FREE);
 	mm_virtual_range_set(SLAB_VM_BASE, SLAB_SIZE, VM_USED);
 
 	/* pmm stacks */

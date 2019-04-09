@@ -98,6 +98,4 @@ void idt_init(void) {
 	idtr.limit = sizeof(idt) - 1;
 
 	idt_load(&idtr);
-
-	__asm volatile ("sti");
 }

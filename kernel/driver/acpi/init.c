@@ -4,10 +4,6 @@
 #include <stdio.h>
 #include <vy.h>
 
-static void acpi_notify_handler(ACPI_HANDLE handle, UINT32 value, vy_unused void* context) {
-    printf("[acpi]	acpi_notify_handler(%p, %u)\n", handle, value);
-}
-
 static void acpi_global_event_handler(UINT32 type, vy_unused ACPI_HANDLE device, UINT32 number, vy_unused void* context) {
 	if(type == ACPI_EVENT_TYPE_FIXED && number == ACPI_EVENT_POWER_BUTTON) {
 		acpi_shutdown();
@@ -36,10 +32,7 @@ void acpi_init(void) {
 	}
 
 	apic_init();
-warn_push
-no_warn_clang(-Wnull-pointer-arithmetic);
-	status = AcpiInstallNotifyHandler(ACPI_ROOT_OBJECT, ACPI_SYSTEM_NOTIFY, acpi_notify_handler, NULL);
-warn_pop
+
 	if(ACPI_FAILURE(status)) {
 		AcpiTerminate();
 		panic("ACPI failure %u @ AcpiInstallNotifyHandler", status);

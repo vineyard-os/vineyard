@@ -9,6 +9,7 @@ SECTIONS {
 
 	.text ALIGN(PAGE) : AT(ADDR(.text) - HIGHER_HALF + PHYSICAL) {
 		*(.text)
+		*(.eh_frame)
 	} :code
 
 	.rodata ALIGN(PAGE) : AT(ADDR(.rodata) - HIGHER_HALF + PHYSICAL) {
@@ -25,7 +26,6 @@ SECTIONS {
 
 	/DISCARD/ : {
 		*(.comment)
-		*(.eh_frame)
 		*(.note.gnu.build-id)
 	}
 

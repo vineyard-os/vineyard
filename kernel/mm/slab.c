@@ -37,7 +37,7 @@ static slab_t *mm_slab_create(slab_cache_t *cache __attribute__((unused))) {
 
 	/* set up the slab */
 
-	panic("unimplemented");
+	panic("mm_slab_create unimplemented");
 
 	return NULL;
 }

@@ -1,22 +1,32 @@
 include config/all
 
 HDD				:= bin/hdd.img
+HDD_VDI			:= bin/hdd.vdi
 CD				:= bin/cd.iso
+VBOXMANAGE		?= VBoxManage
+VM_NAME			?= vineyard
 
 setup: $(OVMF) $(UNI-VGA)
 
 hdd: $(HDD)
 
+define HDD_FDISK
+"o\nn\np\n1\n16384\n\nt\nb\nw\n"
+endef
+
 include kernel/Makefile
 include kernel/efistub/Makefile
 
 $(HDD): $(LOADER) $(KERNEL)
-	dd if=/dev/zero of=$(HDD) bs=1k count=1440
-	mformat -i $(HDD) -f 1440 ::
-	mmd -i $(HDD) ::/EFI
-	mmd -i $(HDD) ::/EFI/BOOT
-	mcopy -i $(HDD) $(LOADER) ::/EFI/BOOT/BOOTX64.EFI
-	mcopy -i $(HDD) $(KERNEL) ::/kernel
+	fallocate -l 48M $(HDD)
+	echo -e $(HDD_FDISK) | fdisk $(HDD) > /dev/null
+	fallocate -l 40M $(HDD).part
+	mkfs.fat -F32 -S512 $(HDD).part > /dev/null
+	mmd -i $(HDD).part ::/EFI
+	mmd -i $(HDD).part ::/EFI/BOOT
+	mcopy -i $(HDD).part bin/hdd/efi/boot/bootx64.efi ::/EFI/BOOT
+	mcopy -i $(HDD).part bin/hdd/kernel ::
+	dd if=$(HDD).part of=$(HDD) bs=512 seek=16384 status=none
 
 $(CD): $(HDD)
 	mkdir -p iso
@@ -25,6 +35,16 @@ $(CD): $(HDD)
 
 test: $(LOADER) $(KERNEL) $(OVMF) $(EMU_REQ)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET))
+
+test-gdb: $(LOADER) $(KERNEL) $(OVMF) $(EMU_REQ)
+	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET) -s -S)
+
+test-vbox: $(LOADER) $(KERNEL) $(HDD)
+	qemu-img convert -f raw -O vdi $(HDD) $(HDD_VDI)
+	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "IDE" --port 0 --device 0 --medium none
+	$(VBOXMANAGE) closemedium disk $(HDD_VDI)
+	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "IDE" --port 0 --device 0 --medium $(HDD_VDI) --type hdd
+	$(VBOXMANAGE) startvm $(VM_NAME) | grep -v 'VM "$(VM_NAME)"' || true
 
 clean:
 	$(call run,"RM",rm -f $(KERNEL) $(LOADER) $(KERNEL_OBJ) $(LOADER_OBJ) $(KERNEL_DEP))
@@ -47,8 +67,8 @@ $(UNI-VGA):
 	tar xzf $(UNI-VGA_DIR)/uni-vga.tar.gz --strip-components=1 -C $(UNI-VGA_DIR)
 
 $(ACPICA_DIR):
-	wget $(ACPICA_URL) -O $(ACPICA_TAR)
 	mkdir -p $(ACPICA_DIR)
+	wget $(ACPICA_URL) -O $(ACPICA_TAR)
 	tar -xf $(ACPICA_TAR) -C $(ACPICA_DIR) --strip-components=1
 	mkdir -p kernel/acpica
 	cp $(ACPICA_DIR)/source/components/{dispatcher,events,executer,hardware,parser,namespace,utilities,tables,resources}/*.c kernel/acpica/
@@ -63,7 +83,7 @@ clean-uni-vga:
 clean-acpica:
 	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR))
 
-.PHONY: setup test clean clean-bin clean-font clean-uni-vga clean-acpica
+.PHONY: setup test test-vbox clean clean-bin clean-font clean-uni-vga clean-acpica
 
 .SUFFIXES:
 .SUFFIXES: .c .o
