@@ -216,6 +216,24 @@ isr_handle_31:
 	push 31
 	jmp isr_dispatch_setup
 
+[global isr_handle_lvt_timer]
+isr_handle_lvt_timer:
+	push 0
+	push 0xFD
+	jmp isr_dispatch_setup
+
+[global isr_handle_lvt_error]
+isr_handle_lvt_error:
+	push 0
+	push 0xFE
+	jmp isr_dispatch_setup
+
+[global isr_handle_spurious]
+isr_handle_spurious:
+	push 0
+	push 0xFF
+	jmp isr_dispatch_setup
+
 [extern isr_dispatch]
 [global isr_dispatch_setup]
 isr_dispatch_setup:

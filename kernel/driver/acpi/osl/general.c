@@ -15,8 +15,12 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(void) {
 	return (uintptr_t) info.rsdp;
 }
 
-ACPI_STATUS AcpiOsPredefinedOverride(vy_unused const ACPI_PREDEFINED_NAMES *PredefinedObject, ACPI_STRING *NewValue) {
-	*NewValue = 0;
+ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES *PredefinedObject, ACPI_STRING *NewValue) {
+	if(!PredefinedObject || !NewValue) {
+		return AE_BAD_PARAMETER;
+	}
+
+	*NewValue = NULL;
 	return AE_OK;
 }
 

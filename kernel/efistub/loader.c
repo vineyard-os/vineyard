@@ -9,6 +9,43 @@
 #include <stdbool.h>
 #include <string.h>
 
+static const char *efi_errors[] = {
+	[EFI_SUCCESS] = "SUCCESS",
+	[EFI_LOAD_ERROR] = "LOAD_ERROR",
+	[EFI_INVALID_PARAMETER] = "INVALID_PARAMETER",
+	[EFI_UNSUPPORTED] = "UNSUPPORTED",
+	[EFI_BAD_BUFFER_SIZE] = "BAD_BUFFER_SIZE",
+	[EFI_BUFFER_TOO_SMALL] = "BUFFER_TOO_SMALL",
+	[EFI_NOT_READY] = "NOT_READY",
+	[EFI_DEVICE_ERROR] = "DEVICE_ERROR",
+	[EFI_WRITE_PROTECTED] = "WRITE_PROTECTED",
+	[EFI_OUT_OF_RESOURCES] = "OUT_OF_RESOURCES",
+	[EFI_VOLUME_CORRUPTED] = "VOLUME_CORRUPTED",
+	[EFI_VOLUME_FULL] = "VOLUME_FULL",
+	[EFI_NO_MEDIA] = "NO_MEDIA",
+	[EFI_MEDIA_CHANGED] = "MEDIA_CHANGED",
+	[EFI_NOT_FOUND] = "NOT_FOUND",
+	[EFI_ACCESS_DENIED] = "ACCESS_DENIED",
+	[EFI_NO_RESPONSE] = "NO_RESPONSE",
+	[EFI_NO_MAPPING] = "NO_MAPPING",
+	[EFI_TIMEOUT] = "TIMEOUT",
+	[EFI_NOT_STARTED] = "NOT_STARTED",
+	[EFI_ALREADY_STARTED] = "ALREADY_STARTED",
+	[EFI_ABORTED] = "ABORTED",
+	[EFI_ICMP_ERROR] = "ICMP_ERROR",
+	[EFI_TFTP_ERROR] = "TFTP_ERROR",
+	[EFI_PROTOCOL_ERROR] = "PROTOCOL_ERROR",
+	[EFI_INCOMPATIBLE_VERSION] = "INCOMPATIBLE_VERSION",
+	[EFI_SECURITY_VIOLATION] = "SECURITY_VIOLATION",
+	[EFI_CRC_ERROR] = "CRC_ERROR",
+	[EFI_END_OF_MEDIA] = "END_OF_MEDIA",
+	[EFI_END_OF_FILE] = "END_OF_FILE",
+	[EFI_INVALID_LANGUAGE] = "INVALID_LANGUAGE",
+	[EFI_COMPROMISED_DATA] = "COMPROMISED_DATA",
+	[EFI_IP_ADDRESS_CONFLICT] = "IP_ADDRESS_CONFLICT",
+	[EFI_HTTP_ERROR] = "HTTP_ERROR",
+};
+
 efi_handle handle;
 efi_system_table *st;
 
@@ -81,10 +118,11 @@ efi_status efi_main(efi_handle image_handle, efi_system_table *systab) {
 		if(phdr->p_type == PT_LOAD) {
 			size_t pages = (phdr->p_memsz + 0xfff) / 0x1000;
 			uintptr_t physical = phdr->p_paddr;
-			status = st->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pages, &physical);
+			status = st->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pages, &physical);
 
 			if(EFI_ERROR(status)) {
-				efi_panic(L"error mapping kernel", status);
+				efi_print(efi_errors[status]);
+				efi_panic(L" error mapping kernel", status);
 			}
 
 			kernel->SetPosition(kernel, phdr->p_offset);
@@ -95,7 +133,7 @@ efi_status efi_main(efi_handle image_handle, efi_system_table *systab) {
 			efi_virt_map(physical, phdr->p_vaddr, pages, flags);
 
 			if(phdr->p_memsz - phdr->p_filesz > 0) {
-				memset((uint8_t *) phdr->p_paddr + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
+				memset((uint8_t *) physical + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
 			}
 		}
 	}

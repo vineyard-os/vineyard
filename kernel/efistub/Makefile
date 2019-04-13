@@ -7,7 +7,7 @@ LOADER_OBJ		:= $(addprefix bin/obj/,$(addsuffix .o,$(LOADER_SRC)))
 LOADER_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 LOADER			:= bin/hdd/efi/boot/bootx64.efi
 
-LOADER_CFLAGS	:= -Ikernel/include -Ilib/include -Wno-format -Wno-format-security -D STACK=0xFFFFFE0000000000 -D STACK_SIZE=0x21000
+LOADER_CFLAGS	:= -Ikernel/include -Ilib/include -Wno-format -Wno-format-security -D STACK=0xFFFFFE0000000000 -D STACK_SIZE=0x21000 -D VINEYARD_LOADER
 LOADER_ASFLAGS	:= -D STACK=0xFFFFFE0000000000 -D STACK_SIZE=0x21000
 
 loader: $(LOADER)

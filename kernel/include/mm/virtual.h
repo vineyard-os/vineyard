@@ -10,12 +10,22 @@
 
 #define HIGHER_HALF 0xFFFF800000000000
 #define PAGE_TABLES 0xFFFFFF0000000000
-#define KERNEL_START 0XFFFFFFFF80000000
+#define KERNEL_START 0xFFFFFFFF80000000
 
 #define VM_FREE 1UL
 #define VM_USED 2UL
 
-#define PHY(x) ((uintptr_t) (x) - KERNEL_START + 0x100000)
+#define PML1_OFFSET 0xFFFFFF0000000000
+#define PML2_OFFSET 0xFFFFFF7F80000000
+#define PML3_OFFSET 0xFFFFFF7FBFC00000
+#define PML4_OFFSET 0xFFFFFF7FBFDFE000
+
+#define PML1_SHIFT 12
+#define PML2_SHIFT 21
+#define PML3_SHIFT 30
+#define PML4_SHIFT 39
+
+// #define PHY(x) ((uintptr_t) (x) - KERNEL_START + 0x100000)
 /* align an address to the nearest page boundary higher or equal to the address */
 #define PAGE_UP(x) ((0xFFF & (x)) ? (((x) + 0x1000) & ~0xFFFUL) : (x))
 

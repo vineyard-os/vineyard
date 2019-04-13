@@ -1,4 +1,6 @@
 #include <acpi.h>
+#include <time/pit.h>
+#include <stdio.h>
 #include <vy.h>
 
 ACPI_THREAD_ID AcpiOsGetThreadId(void) {
@@ -9,8 +11,8 @@ ACPI_STATUS AcpiOsExecute(vy_unused ACPI_EXECUTE_TYPE Type, vy_unused ACPI_OSD_E
 	panic("%s unimplemented", __func__);
 }
 
-void AcpiOsSleep(vy_unused UINT64 Milliseconds) {
-	panic("%s unimplemented", __func__);
+void AcpiOsSleep(UINT64 Milliseconds) {
+	pit_wait(Milliseconds);
 }
 
 void AcpiOsStall(vy_unused UINT32 Microseconds) {

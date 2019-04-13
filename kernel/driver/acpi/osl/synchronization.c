@@ -17,7 +17,8 @@ void AcpiOsReleaseMutex(vy_unused ACPI_MUTEX mutex) {
 	return;
 }
 
-ACPI_STATUS AcpiOsCreateSemaphore(vy_unused uint32_t max_units, vy_unused uint32_t initial_units, vy_unused ACPI_SEMAPHORE *s) {
+ACPI_STATUS AcpiOsCreateSemaphore(vy_unused uint32_t max_units, vy_unused uint32_t initial_units, ACPI_SEMAPHORE *s) {
+	*s = (ACPI_HANDLE) 1;
 	return AE_OK;
 }
 
@@ -30,7 +31,7 @@ ACPI_STATUS AcpiOsWaitSemaphore(vy_unused ACPI_SEMAPHORE s, vy_unused uint32_t u
 }
 
 ACPI_STATUS AcpiOsSignalSemaphore(vy_unused ACPI_SEMAPHORE s, vy_unused uint32_t units) {
-	panic("%s unimplemented", __func__);
+	return AE_OK;
 }
 
 ACPI_STATUS AcpiOsCreateLock(vy_unused ACPI_SPINLOCK *lock) {

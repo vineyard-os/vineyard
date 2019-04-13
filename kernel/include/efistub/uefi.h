@@ -9,6 +9,7 @@ extern efi_handle handle;
 extern efi_system_table *st;
 
 efi_status efi_print(const char *str);
+efi_status efi_printn(const char *str, size_t n);
 __attribute__((format(printf, 1, 2))) int efi_printf(const char *restrict format, ...);
 
 efi_status efi_main(efi_handle image_handle, efi_system_table *systab);

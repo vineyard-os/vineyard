@@ -6,7 +6,9 @@ CD				:= bin/cd.iso
 VBOXMANAGE		?= VBoxManage
 VM_NAME			?= vineyard
 
-setup: $(OVMF) $(UNI-VGA)
+setup: $(OVMF) $(UNI-VGA) $(ACPICA_DIR)
+	echo "Setup complete"
+	exit
 
 hdd: $(HDD)
 
@@ -18,9 +20,9 @@ include kernel/Makefile
 include kernel/efistub/Makefile
 
 $(HDD): $(LOADER) $(KERNEL)
-	fallocate -l 48M $(HDD)
+	dd if=/dev/zero of=$(HDD) bs=48M count=1
 	echo -e $(HDD_FDISK) | fdisk $(HDD) > /dev/null
-	fallocate -l 40M $(HDD).part
+	dd if=/dev/zero of=$(HDD).part bs=40M count=1
 	mkfs.fat -F32 -S512 $(HDD).part > /dev/null
 	mmd -i $(HDD).part ::/EFI
 	mmd -i $(HDD).part ::/EFI/BOOT
@@ -33,10 +35,10 @@ $(CD): $(HDD)
 	cp $(HDD) iso
 	$(call run,"ISO",xorriso -as mkisofs -R -f -e $(shell basename $(HDD)) -no-emul-boot -o $(CD) iso)
 
-test: $(LOADER) $(KERNEL) $(OVMF) $(EMU_REQ)
+test: setup $(LOADER) $(KERNEL) $(EMU_REQ)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET))
 
-test-gdb: $(LOADER) $(KERNEL) $(OVMF) $(EMU_REQ)
+test-gdb: setup $(LOADER) $(KERNEL) $(EMU_REQ)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET) -s -S)
 
 test-vbox: $(LOADER) $(KERNEL) $(HDD)
@@ -56,6 +58,7 @@ clean-font:
 	$(call run,"RM", rm -f kernel/driver/graphics/font.c)
 
 distclean: clean-bin clean-font clean-uni-vga clean-acpica
+	rm -rf third-party
 
 $(OVMF):
 	mkdir -p bin
@@ -63,19 +66,19 @@ $(OVMF):
 
 $(UNI-VGA):
 	mkdir -p $(UNI-VGA_DIR)
-	wget -qq $(UNI-VGA_URL) -O $(UNI-VGA_DIR)/uni-vga.tar.gz
+	$(call run,"WGET",wget -qq $(UNI-VGA_URL) -O $(UNI-VGA_DIR)/uni-vga.tar.gz)
 	tar xzf $(UNI-VGA_DIR)/uni-vga.tar.gz --strip-components=1 -C $(UNI-VGA_DIR)
 
 $(ACPICA_DIR):
 	mkdir -p $(ACPICA_DIR)
-	wget $(ACPICA_URL) -O $(ACPICA_TAR)
+	$(call run,"WGET",wget $(ACPICA_URL) -O $(ACPICA_TAR) -qq)
 	tar -xf $(ACPICA_TAR) -C $(ACPICA_DIR) --strip-components=1
 	mkdir -p kernel/acpica
 	cp $(ACPICA_DIR)/source/components/{dispatcher,events,executer,hardware,parser,namespace,utilities,tables,resources}/*.c kernel/acpica/
 	mkdir -p kernel/include/acpica
 	cp -R $(ACPICA_DIR)/source/include/* kernel/include/acpica/
-	patch -p0 < patches/acpica.patch
-	php util/acpica-fixup kernel/acpica
+	$(call run,"PATCH",patch -p0 < patches/acpica.patch)
+	$(call run,"FIXUP",php util/acpica-fixup kernel/acpica)
 
 clean-uni-vga:
 	$(call run,"RM", rm -rf $(UNI-VGA_DIR))

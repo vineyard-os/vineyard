@@ -93,3 +93,7 @@ void isr_handle_irq20(void);
 void isr_handle_irq21(void);
 void isr_handle_irq22(void);
 void isr_handle_irq23(void);
+
+void isr_handle_lvt_timer(void);
+void isr_handle_lvt_error(void);
+void isr_handle_spurious(void);

@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <vy.h>
 
+#define LVT_TIMER 0xFD
+#define LVT_ERROR 0xFE
+
 typedef struct {
 	uint16_t limit;
 	uint64_t base;

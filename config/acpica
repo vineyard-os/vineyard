@@ -1,4 +1,4 @@
-ACPICA_URL		:= https://acpica.org/sites/acpica/files/acpica-unix2-20181213.tar.gz
+ACPICA_URL		:= https://acpica.org/sites/acpica/files/acpica-unix2-20190405.tar.gz
 ACPICA_TAR		:= third-party/acpica.tar.gz
 ACPICA_DIR		:= third-party/acpica
 ACPICA_DIR_C	:= kernel/acpica

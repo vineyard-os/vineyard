@@ -6,9 +6,6 @@ ifeq ($(MODE),fat)
 	EMU_REQ		+= $(HDD)
 else ifeq ($(MODE),dir)
 	EMU_TARGET	:= -drive format=raw,file=fat:rw:bin/hdd
-else ifeq ($(MODE),cd)
-	EMU_TARGET	 = -cdrom $(CD)
-	EMU_REQ		+= $(CD)
 else
 	$(error)
 endif

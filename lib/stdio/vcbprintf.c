@@ -88,6 +88,9 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 			width += (size_t) (*format - '0');
 			format++;
 			goto width_read;
+		} else if(*format == '*') {
+			width = (size_t) va_arg(args, int);
+			format++;
 		}
 
 		size_t precision = (size_t) -1;

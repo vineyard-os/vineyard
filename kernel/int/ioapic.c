@@ -56,6 +56,6 @@ void ioapic_route(size_t from, uintptr_t flags, size_t to) {
 
 	uintptr_t redtbl_entry = (to & 0xFF) | flags;
 
-	ioapic_write(ioapic, (uint32_t) (IOAPIC_REDTBL + (from << 1)), redtbl_entry & 0xFFFFFFFF);
 	ioapic_write(ioapic, (uint32_t) (IOAPIC_REDTBL + (from << 1) + 1), (uint32_t) (redtbl_entry >> 32) & 0xFFFFFFFF);
+	ioapic_write(ioapic, (uint32_t) (IOAPIC_REDTBL + (from << 1)), redtbl_entry & 0xFFFFFFFF);
 }

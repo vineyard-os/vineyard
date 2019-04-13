@@ -1,5 +1,6 @@
 #include <boot/info.h>
 #include <driver/framebuffer.h>
+#include <mm/page_tables.h>
 #include <uefi.h>
 
 void efi_init(void) {
@@ -15,6 +16,8 @@ void efi_init(void) {
 
 	status = efi_get_image(&info.image);
 	EFIERR(status);
+
+	mm_page_tables_setup();
 
 	status = efi_get_memory_map();
 	EFIERR(status);

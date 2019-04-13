@@ -58,6 +58,5 @@ void isr_dispatch(cpu_state_t *state) {
 		(*handlers[state->id])(state);
 	} else {
 		printf("no handler for interrupt %zu\n", state->id);
-		for(;;);
 	}
 }

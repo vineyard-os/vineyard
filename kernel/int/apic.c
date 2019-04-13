@@ -1,13 +1,21 @@
 #include <acpi.h>
 #include <assert.h>
+#include <cpu/cpu.h>
 #include <cpu/msr.h>
 #include <int/apic.h>
+#include <int/idt.h>
 #include <int/ioapic.h>
 #include <int/pic.h>
 #include <mm/virtual.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <vy.h>
+
+#define LVT_MASKED         0x00010000
+#define LVT_TYPE_FIXED     0x00000000
+#define LVT_TYPE_SMI       0x00000200
+#define LVT_TYPE_NMI       0x00000400
+#define LVT_TYPE_EXTINT    0x00000700
 
 #define MADT_TYPE_LAPIC      0x00
 #define MADT_TYPE_IOAPIC     0x01
@@ -25,6 +33,11 @@
 #define APIC_EOI        0x0B
 #define APIC_SVR        0x0F
 #define APIC_ESR        0x28
+
+#define APIC_LVT_TIMER  0x32
+#define APIC_LVT_LINT0  0x35
+#define APIC_LVT_LINT1  0x36
+#define APIC_LVT_ERROR  0x37
 
 #define SVR_ENABLED 0x100
 
@@ -90,21 +103,18 @@ void apic_ack(void) {
 	apic_write(APIC_EOI, 0);
 }
 
-static bool lnmi0 = false;
-static bool lnmi1 = false;
-
 void apic_init(void) {
 	ACPI_TABLE_HEADER *madt;
 	ACPI_STATUS status = AcpiGetTable((char *) "APIC", 0, &madt);
 	assert(status == AE_OK && madt);
 
 	__asm volatile ("cli");
-	pic_init();
 
 	uintptr_t end = (uintptr_t) madt + madt->Length;
 	madt_extended_t *madt_ext = (madt_extended_t *) ((uintptr_t) madt + sizeof(ACPI_TABLE_HEADER));
 	lapic_addr = madt_ext->lapic_addr;
-	// uint32_t flags = madt_ext->flags;
+	uint32_t madt_flags = madt_ext->flags;
+	bool bsp_apic = false;
 
 	uintptr_t ptr = (uintptr_t) madt + sizeof(ACPI_TABLE_HEADER) + sizeof(madt_extended_t);
 
@@ -114,12 +124,18 @@ void apic_init(void) {
 		switch(entry->type) {
 			case MADT_TYPE_LAPIC: {
 				if(entry->lapic.flags & 1) {
-					vy_unused uint8_t id = entry->lapic.id;
-					vy_unused uint8_t apic_id = entry->lapic.apic_id;
+					uint8_t id = entry->lapic.id;
+					uint8_t apic_id = entry->lapic.apic_id;
 
 #ifdef ACPI_DEBUG
 					printf("[apic]	LAPIC: id %hhu, apic_id %hhu\n", id, apic_id);
 #endif
+					if(!bsp_apic) {
+						bsp_apic = true;
+						cpu_t *cpu = cpu_get();
+						cpu->apic_id = apic_id;
+						cpu->acpi_id = id;
+					}
 				}
 				break;
 			}
@@ -138,12 +154,13 @@ void apic_init(void) {
 			case MADT_TYPE_LNMI: {
 				uint8_t id = entry->lnmi.id;
 				uint8_t lint = entry->lnmi.lint;
+				cpu_t *cpu = cpu_get();
 
 				if(id == 0 || id == 0xFF) {
 					if(lint == 0) {
-						lnmi0 = true;
+						cpu->apic_lint_nmi0 = true;
 					} else {
-						lnmi1 = true;
+						cpu->apic_lint_nmi1 = true;
 					}
 				}
 
@@ -180,14 +197,17 @@ void apic_init(void) {
 				uint8_t bus = entry->intr.bus;
 				printf("[apic]	Interrupt Source Override: bus %hhu, IRQ source %hhu, Global System Interrupt %u, active %s %s\n", bus, irq, gsi, (flags & 2) ? "low" : "high", (flags & 8) ? "level" : "edge");
 #endif
-				uintptr_t irq_flags = 0;
+				uintptr_t irq_flags = REDTBL_DESTMODE_PHYSICAL | REDTBL_DELMODE_FIXED;
 
-				if((flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_ACTIVE_LOW) {
-					flags |= REDTBL_ACTIVE_HIGH;
+				/* the SCI interrupt is always active low, level triggered (ACPI 5.0 Errata A, section 5.2.9, table 5-34, p. 114) */
+				if((flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_ACTIVE_HIGH || (flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_CONFORMS) {
+					if(gsi != AcpiGbl_FADT.SciInterrupt) {
+						irq_flags |= REDTBL_ACTIVE_HIGH;
+					}
 				}
 
-				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL) {
-					flags |= REDTBL_TRIGGER_LEVEL;
+				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL || gsi == AcpiGbl_FADT.SciInterrupt) {
+					irq_flags |= REDTBL_TRIGGER_LEVEL;
 				}
 
 				ioapic_route(irq, irq_flags, gsi + 32);
@@ -200,14 +220,20 @@ void apic_init(void) {
 
 		ptr += entry->len;
 	}
+
+	if(madt_flags & ACPI_MADT_PCAT_COMPAT) {
+		pic_init();
+	}
 }
 
 void apic_enable(void) {
+	cpu_t *cpu = cpu_get();
+
 	uintptr_t apic_mmio_addr = mm_virtual_alloc(1);
 	apic_mmio = (volatile uint32_t *) apic_mmio_addr;
 	mm_virtual_map(lapic_addr & ~0xFFFUL, (uintptr_t) apic_mmio, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
 
-	uint64_t apic_base = (msr_read(MSR_APIC_BASE) & APIC_BASE_BSP) | lapic_addr | APIC_BASE_ENABLED;
+	uint64_t apic_base = (msr_read(MSR_APIC_BASE) & APIC_BASE_BSP) | (lapic_addr & 0xFFFFF000) | APIC_BASE_ENABLED;
 	msr_write(MSR_APIC_BASE, apic_base);
 
 	/* set the spurious interrupt vector */
@@ -216,6 +242,11 @@ void apic_enable(void) {
 	/* reset the error status */
 	apic_write(APIC_ESR, 0);
 	apic_write(APIC_ESR, 0);
+
+	apic_write(APIC_LVT_LINT0, cpu->apic_lint_nmi0 ? LVT_TYPE_NMI : LVT_MASKED);
+	apic_write(APIC_LVT_LINT1, cpu->apic_lint_nmi1 ? LVT_TYPE_NMI : LVT_MASKED);
+	apic_write(APIC_LVT_TIMER, LVT_MASKED);
+	apic_write(APIC_LVT_ERROR, LVT_ERROR);
 
 	/* reset the priority so we accept all interrupts */
 	apic_write(APIC_TPR, 0);

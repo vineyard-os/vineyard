@@ -5,6 +5,7 @@
 #include <mm/page.h>
 #include <mm/physical.h>
 #include <mm/tlb.h>
+#include <mm/uefi.h>
 #include <mm/virtual.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +49,7 @@ static const char *memory_map_types[] = {
 /* pointer to the level 1 page table holding the stack at index 511 */
 uint64_t *mm_physical_stack_pml1;
 /* page tables for mapping in the stack's address */
+/* TODO: dynamically find the physical addresses */
 static uint64_t stack_pml3[512] __attribute__((__aligned__(0x1000)));
 static uint64_t stack_pml2[512] __attribute__((__aligned__(0x1000)));
 static uint64_t stack_pml1[512] __attribute__((__aligned__(0x1000)));
@@ -55,7 +57,7 @@ static uint64_t stack_pml1[512] __attribute__((__aligned__(0x1000)));
 /* static allocation of the first stack */
 static uint64_t root_stack[512] __attribute__((__aligned__(0x1000)));
 /* physical address of the first stack */
-static uint64_t root_stack_phys = (uintptr_t) &root_stack - 0xFFFFFFFF80000000 + 0x100000;
+static uint64_t root_stack_phys;
 /* virtual address of the currently mapped stack */
 static struct mm_physical_stack *stack = (struct mm_physical_stack *) STACK_ADDR;
 
@@ -73,23 +75,28 @@ static void mm_physical_init_stack(void) {
 
 		/* TODO: maybe check whether page is present? investigate the correct way */
 		if(!(table[pml4i] & PAGE_PRESENT)) {
-			table[pml4i] = (((uint64_t) stack_pml3) - 0xFFFFFFFF80000000 + 0x100000) | PAGE_PRESENT | PAGE_WRITE;
+			uint64_t stack_pml3_phys = mm_uefi_get_phys((uintptr_t) &stack_pml3);
+			table[pml4i] = stack_pml3_phys | PAGE_PRESENT | PAGE_WRITE;
 		}
 
 		table = (uint64_t *) (table[pml4i] & ~0xFFFUL);
 
 		if(!(table[pml3i] & PAGE_PRESENT)) {
-			table[pml3i] = (((uint64_t) stack_pml2) - 0xFFFFFFFF80000000 + 0x100000) | PAGE_PRESENT | PAGE_WRITE;
+			uint64_t stack_pml2_phys = mm_uefi_get_phys((uintptr_t) &stack_pml2);
+			table[pml3i] = stack_pml2_phys | PAGE_PRESENT | PAGE_WRITE;
 		}
 
 		table = (uint64_t *) (table[pml3i] & ~0xFFFUL);
 
 		if(!(table[pml2i] & PAGE_PRESENT)) {
-			table[pml2i] = (((uint64_t) stack_pml1) - 0xFFFFFFFF80000000 + 0x100000) | PAGE_PRESENT | PAGE_WRITE;
+			uint64_t stack_pml1_phys = mm_uefi_get_phys((uintptr_t) &stack_pml1);
+			table[pml2i] = stack_pml1_phys | PAGE_PRESENT | PAGE_WRITE;
 		}
 
 		mm_physical_stack_pml1 = (uint64_t *) (table[pml2i] & ~0xFFFUL);
 	}
+
+	root_stack_phys = mm_uefi_get_phys((uintptr_t) &root_stack);
 
 	mm_physical_next_stack(root_stack_phys);
 	memset(root_stack, 0, sizeof(*root_stack));

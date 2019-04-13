@@ -18,3 +18,5 @@
 #define ACPI_DEBUG_OUTPUT
 #define ACPI_USE_STANDARD_HEADERS
 #define ACPI_USE_SYSTEM_CLIBRARY
+
+#include <acpica/platform/acgcc.h>

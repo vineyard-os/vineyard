@@ -2,7 +2,6 @@
 #include <boot/info.h>
 #include <cpu/cpu.h>
 #include <efi.h>
-#include <efi/protocol/file.h>
 #include <mm/physical.h>
 #include <mm/virtual.h>
 #include <uefi.h>

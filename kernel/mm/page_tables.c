@@ -1,9 +1,12 @@
+#include <cpu/cpu.h>
 #include <cpu/cr.h>
 #include <cpu/msr.h>
+#include <driver/uart.h>
 #include <driver/framebuffer.h>
 #include <mm/page.h>
 #include <mm/page_tables.h>
 #include <mm/physical.h>
+#include <mm/uefi.h>
 #include <mm/virtual.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -27,57 +30,72 @@ static uint64_t pml2_pmm[512] __attribute__((aligned(0x1000)));
 static uint64_t pml1_pmm[512] __attribute__((aligned(0x1000)));
 
 void mm_page_tables_setup(void) {
+	pml4[(STACK >> 39) & 0x1FFUL] = mm_uefi_get_phys((uintptr_t) &pml3_stack) | PAGE_WRITE | PAGE_PRESENT;
+	pml4[510] = mm_uefi_get_phys((uintptr_t) &pml4) | PAGE_WRITE | PAGE_PRESENT;
+	pml4[511] = mm_uefi_get_phys((uintptr_t) &pml3_kernel) | PAGE_WRITE | PAGE_PRESENT;
+
+	/* map the kernel stack */
 	size_t stack_size = 33;
 
-	size_t stack_pml4i = (STACK >> 39) & 0x1FFUL;
 	size_t stack_pml3i = (STACK >> 30) & 0x1FFUL;
 	size_t stack_pml2i = (STACK >> 21) & 0x1FFUL;
 
-	uint64_t *efi_pml4 = (uint64_t *) (uint64_t) cr3_read();
-	efi_pml4 = (uint64_t *) (efi_pml4[stack_pml4i] & ~0x1FFUL);
-	efi_pml4 = (uint64_t *) (efi_pml4[stack_pml3i] & ~0x1FFUL);
-	efi_pml4 = (uint64_t *) (efi_pml4[stack_pml2i] & ~0x1FFUL);
+	uintptr_t stack_phy = mm_uefi_get_phys((uintptr_t) STACK);
 
-	uintptr_t stack_phy = efi_pml4[0] & ~0x1FFUL;
-
-	pml4[stack_pml4i] = PHY(pml3_stack) | PAGE_WRITE | PAGE_PRESENT;
-	pml4[510] = PHY(pml4) | PAGE_WRITE | PAGE_PRESENT;
-	pml4[511] = PHY(pml3_kernel) | PAGE_WRITE | PAGE_PRESENT;
-
-	pml3_stack[stack_pml3i] = PHY(pml2_stack) | PAGE_WRITE | PAGE_PRESENT;
-	pml2_stack[stack_pml2i] = PHY(pml1_stack) | PAGE_WRITE | PAGE_PRESENT;
+	pml3_stack[stack_pml3i] = mm_uefi_get_phys((uintptr_t) &pml2_stack) | PAGE_WRITE | PAGE_PRESENT;
+	pml2_stack[stack_pml2i] = mm_uefi_get_phys((uintptr_t) &pml1_stack) | PAGE_WRITE | PAGE_PRESENT;
 
 	for(size_t i = 0; i < stack_size; i++) {
 		pml1_stack[i] = (stack_phy + (i << PAGE_SHIFT)) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
 	}
 
-	pml3_kernel[510] = PHY(pml2_kernel) | PAGE_WRITE | PAGE_PRESENT;
-	pml2_kernel[0] = PHY(pml1_kernel_0) | PAGE_WRITE | PAGE_PRESENT;
-	pml2_kernel[1] = PHY(pml1_kernel_1) | PAGE_WRITE | PAGE_PRESENT;
+	/* map the kernel */
+	pml3_kernel[510] = mm_uefi_get_phys((uintptr_t) &pml2_kernel) | PAGE_WRITE | PAGE_PRESENT;
+	pml2_kernel[0] = mm_uefi_get_phys((uintptr_t) &pml1_kernel_0) | PAGE_WRITE | PAGE_PRESENT;
+	pml2_kernel[1] = mm_uefi_get_phys((uintptr_t) &pml1_kernel_1) | PAGE_WRITE | PAGE_PRESENT;
 
+	/* TODO: in principle, we should dynamically allocate as many pml1 tables as we need; we still are in UEFI */
 	for(size_t i = 0; i < 511; i++) {
-		pml1_kernel_0[i] = (0x100000 + (i << PAGE_SHIFT)) | PAGE_PRESENT | PAGE_WRITE;
+		uintptr_t phys = mm_uefi_get_phys(KERNEL_START + (i << PAGE_SHIFT));
+
+		if(!phys) {
+			return;
+		}
+
+		pml1_kernel_0[i] = phys | PAGE_PRESENT | PAGE_WRITE;
 	}
 
 	for(size_t i = 0; i < 511; i++) {
-		pml1_kernel_1[i] = (0x300000 + (i << PAGE_SHIFT)) | PAGE_PRESENT | PAGE_WRITE;
-	}
+		uintptr_t phys = mm_uefi_get_phys(KERNEL_START + 0x200000 + (i << PAGE_SHIFT));
 
+		if(!phys) {
+			return;
+		}
+
+		pml1_kernel_1[i] = phys | PAGE_PRESENT | PAGE_WRITE;
+	}
+}
+
+void mm_page_tables_commit(void) {
 	/* set up the pmm's mappings */
-	size_t pml4i_pmm = (0xFFFFFEFFFFFFF000 >> 39) & 0x1FF;
-	size_t pml3i_pmm = (0xFFFFFEFFFFFFF000 >> 30) & 0x1FF;
-	size_t pml2i_pmm = (0xFFFFFEFFFFFFF000 >> 21) & 0x1FF;
+	size_t pml4i_pmm = (STACK_ADDR >> 39) & 0x1FF;
+	size_t pml3i_pmm = (STACK_ADDR >> 30) & 0x1FF;
+	size_t pml2i_pmm = (STACK_ADDR >> 21) & 0x1FF;
+	size_t pml1i_pmm = (STACK_ADDR >> 12) & 0x1FF;
 
-	pml4[pml4i_pmm] = PHY(pml3_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
-	pml3_pmm[pml3i_pmm] = PHY(pml2_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
-	pml2_pmm[pml2i_pmm] = PHY(pml1_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
-	pml1_pmm[511] = mm_physical_stack_pml1[511];
+	pml4[pml4i_pmm] = mm_uefi_get_phys((uintptr_t) &pml3_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
+	pml3_pmm[pml3i_pmm] = mm_uefi_get_phys((uintptr_t) &pml2_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
+	pml2_pmm[pml2i_pmm] = mm_uefi_get_phys((uintptr_t) &pml1_pmm) | PAGE_PRESENT | PAGE_WRITE | PAGE_NX;
+	pml1_pmm[pml1i_pmm] = mm_physical_stack_pml1[511];
 
 	framebuffer_ready = false;
 
 	msr_write(0xC0000080, msr_read(0xC0000080) | 0x800);
 	cr4_write(cr4_read() | 0x10);
-	cr3_write(PHY(pml4));
+	cr3_write(mm_uefi_get_phys((uintptr_t) &pml4));
+
+	msr_write(MSR_GS_BASE, (uint64_t) &bsp);
+	msr_write(MSR_GS_KERNEL_BASE, (uint64_t) &bsp);
 
 	struct vm_indices i;
 	mm_virtual_indices(&i, STACK_ADDR);

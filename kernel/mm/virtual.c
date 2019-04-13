@@ -12,16 +12,6 @@
 #include <string.h>
 #include <vy.h>
 
-#define PML1_OFFSET 0xFFFFFF0000000000
-#define PML2_OFFSET 0xFFFFFF7F80000000
-#define PML3_OFFSET 0xFFFFFF7FBFC00000
-#define PML4_OFFSET 0xFFFFFF7FBFDFE000
-
-#define PML1_SHIFT 12
-#define PML2_SHIFT 21
-#define PML3_SHIFT 30
-#define PML4_SHIFT 39
-
 #define VM_FOREACH(x) for(struct vm_node *x = list.head; x; x = x->next)
 
 struct vm_node {
@@ -73,14 +63,12 @@ vy_status_t mm_virtual_map(uintptr_t phys, uintptr_t virt, size_t pages, uintptr
 		memset(i.pml3, 0, 0x1000);
 	}
 
-
 	if(!(i.pml3[i.pml3i] & PAGE_PRESENT)) {
 		uintptr_t new_table = mm_physical_get();
 		i.pml3[i.pml3i] = new_table | PAGE_PRESENT | PAGE_WRITE;
 
 		memset(i.pml2, 0, 0x1000);
 	}
-
 
 	if(!(i.pml2[i.pml2i] & PAGE_PRESENT)) {
 		uintptr_t new_table = mm_physical_get();
@@ -413,7 +401,8 @@ size_t mm_virtual_free(uintptr_t addr) {
 extern void *KERNEL_SIZE;
 
 vy_status_t mm_virtual_init(void) {
-	mm_page_tables_setup();
+	mm_page_tables_commit();
+
 	cache = mm_cache_create_vm(sizeof(struct vm_node));
 
 	mm_virtual_range_set(0xFFFFFE0000021000, 0x1FFFFFDF000, VM_FREE);

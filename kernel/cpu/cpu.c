@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-static cpu_t bsp;
+cpu_t bsp;
 
 void cpu_bsp_init(void) {
 	memset(&bsp, 0, sizeof(bsp));
