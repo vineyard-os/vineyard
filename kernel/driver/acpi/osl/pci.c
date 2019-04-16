@@ -21,6 +21,25 @@ acpi_status acpi_os_read_pci_configuration(struct acpi_pci_id *id, uint32_t reg,
 	return AE_OK;
 }
 
-acpi_status acpi_os_write_pci_configuration(struct acpi_pci_id *id vy_unused, uint32_t reg vy_unused, uint64_t val vy_unused, uint32_t width vy_unused) {
-	panic("%s unimplemented", __func__);
+acpi_status acpi_os_write_pci_configuration(struct acpi_pci_id *id, uint32_t reg, uint64_t val, uint32_t width) {
+	uint32_t addr = (uint32_t) ((uint32_t) (id->bus << 16U) | (uint32_t) (id->device << 11U) | (uint32_t) (id->function << 8U) | (uint32_t) (1 << 31U) | reg);
+
+	outl(0xCF8, addr);
+
+	switch(width) {
+		case 8: {
+			outb(0xCFC, val & 0xFF);
+			break;
+		}
+		case 16: {
+			outw(0xCFC, val & 0xFFFF);
+			break;
+		}
+		case 32: {
+			outl(0xCFC, val & 0xFFFFFFFF);
+			break;
+		}
+	}
+
+	return AE_OK;
 }
