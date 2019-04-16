@@ -57,7 +57,7 @@ clean-bin: clean
 clean-font:
 	$(call run,"RM", rm -f kernel/driver/graphics/font.c)
 
-distclean: clean-bin clean-font clean-uni-vga clean-acpica
+distclean: clean-bin clean-font clean-uni-vga clean-acpica clean-libacpica
 	rm -rf third-party
 
 $(OVMF):
@@ -89,7 +89,10 @@ clean-uni-vga:
 clean-acpica:
 	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR))
 
-.PHONY: setup test test-vbox clean clean-bin clean-font clean-uni-vga clean-acpica
+clean-libacpica:
+	rm -f bin/libacpica.a
+
+.PHONY: setup test test-vbox clean clean-bin clean-font clean-uni-vga clean-acpica clean-libacpica
 
 .SUFFIXES:
 .SUFFIXES: .c .o

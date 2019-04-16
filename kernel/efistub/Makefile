@@ -2,8 +2,8 @@ LOADER_SRC_LIB	:= $(shell find kernel/efistub -name *.c -type l)
 LOADER_SRC_C	:= $(shell find kernel/efistub -name *.c -type f -o -type l)
 LOADER_SRC_ASM	:= $(shell find kernel/efistub -name *.s -type f)
 LOADER_SRC		:= $(LOADER_SRC_C) $(LOADER_SRC_ASM) $(LOADER_SRC_LIB)
-LOADER_OBJ_C	:= $(addprefix bin/obj/,$(addsuffix .o,$(LOADER_SRC_C)))
-LOADER_OBJ		:= $(addprefix bin/obj/,$(addsuffix .o,$(LOADER_SRC)))
+LOADER_OBJ_C	:= $(addprefix bin/kernel/,$(addsuffix .o,$(LOADER_SRC_C)))
+LOADER_OBJ		:= $(addprefix bin/kernel/,$(addsuffix .o,$(LOADER_SRC)))
 LOADER_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 LOADER			:= bin/hdd/efi/boot/bootx64.efi
 
@@ -23,26 +23,26 @@ endif
 kernel/efistub/%.c:
 	true
 
-bin/obj/kernel/efistub/lib/%.c.o: $(LOADER_SRC_LIB)
+bin/kernel/kernel/efistub/lib/%.c.o: $(LOADER_SRC_LIB)
 	mkdir -p $(dir .deps/$@)
 	mkdir -p $(dir .json/$(dir $@))
-	mkdir -p $(dir bin/obj/kernel/efistub/$*)
+	mkdir -p $(dir bin/kernel/kernel/efistub/$*)
 ifndef USE_GCC
 	$(call run,"CC",$(EFI_CC) $(EFI_CFLAGS) $(LOADER_CFLAGS) -c kernel/efistub/lib/$*.c -o $@ -MF .deps/$(@:.o=.d) -MJ .json/$@.json)
 else
 	$(call run,"CC",$(EFI_CC) $(EFI_CFLAGS) $(LOADER_CFLAGS) -c kernel/efistub/lib/$*.c -o $@ -MF .deps/$(@:.o=.d))
 endif
 
-bin/obj/kernel/efistub/%.c.o: $(LOADER_SRC_C)
+bin/kernel/kernel/efistub/%.c.o: $(LOADER_SRC_C)
 	mkdir -p $(dir .deps/$@)
 	mkdir -p $(dir .json/$(dir $@))
-	mkdir -p $(dir bin/obj/kernel/efistub/$*)
+	mkdir -p $(dir bin/kernel/kernel/efistub/$*)
 ifndef USE_GCC
 	$(call run,"CC",$(EFI_CC) $(EFI_CFLAGS) $(LOADER_CFLAGS) -c kernel/efistub/$*.c -o $@ -MF .deps/$(@:.o=.d) -MJ .json/$@.json)
 else
 	$(call run,"CC",$(EFI_CC) $(EFI_CFLAGS) $(LOADER_CFLAGS) -c kernel/efistub/$*.c -o $@ -MF .deps/$(@:.o=.d))
 endif
 
-bin/obj/kernel/efistub/%.s.o: $(LOADER_SRC_ASM)
-	mkdir -p $(dir bin/obj/$<)
+bin/kernel/kernel/efistub/%.s.o: $(LOADER_SRC_ASM)
+	mkdir -p $(dir bin/kernel/$<)
 	$(call run,"AS",$(AS) $(EFI_ASFLAGS) $(LOADER_ASFLAGS) -o $@ kernel/efistub/$*.s)

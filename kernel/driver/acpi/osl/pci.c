@@ -7,7 +7,7 @@
 acpi_status acpi_os_read_pci_configuration(struct acpi_pci_id *id, uint32_t reg, uint64_t *value, uint32_t width) {
 	uint32_t reg_aligned = reg & ~0x03U;
 	uint32_t offset = reg & 0x03U;
-	uint32_t addr = (uint32_t) ((uint32_t) (id->bus << 16U) | (uint32_t) (id->device << 11U) | (uint32_t) (id->function << 8U) | (uint32_t) (1 << 31U) | reg_aligned);
+	uint32_t addr = (uint32_t) (id->bus << 16) | (uint32_t) (id->device << 11) | (uint32_t) (id->function << 8) | (1UL << 31) | reg_aligned;
 
 	outl(0xCF8, addr);
 	uint32_t ret = inl(0xCFC);
@@ -22,7 +22,7 @@ acpi_status acpi_os_read_pci_configuration(struct acpi_pci_id *id, uint32_t reg,
 }
 
 acpi_status acpi_os_write_pci_configuration(struct acpi_pci_id *id, uint32_t reg, uint64_t val, uint32_t width) {
-	uint32_t addr = (uint32_t) ((uint32_t) (id->bus << 16U) | (uint32_t) (id->device << 11U) | (uint32_t) (id->function << 8U) | (uint32_t) (1 << 31U) | reg);
+	uint32_t addr = (uint32_t) (id->bus << 16) | (uint32_t) (id->device << 11) | (uint32_t) (id->function << 8) | (1UL << 31) | reg;
 
 	outl(0xCF8, addr);
 

@@ -13,6 +13,7 @@ GCC				:= x86_64-elf-gcc
 GCC_EFI			:= x86_64-w64-mingw32-gcc
 
 AS				:= yasm
+AR				:= x86_64-elf-ar
 
 ASFLAGS			:= -felf64
 EFI_ASFLAGS		:= -fwin64
