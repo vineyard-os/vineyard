@@ -113,3 +113,16 @@ diff -Naur kernel/include/acpica/platform/acenv.h kernel/include/acpica/platform
 +#include <acpi/acvineyard.h>
 
  /*! [End] no source code translation !*/
+ 
+diff -Naur kernel/include/acpica/acdisasm.h kernel/include/acpica/acdisasm.h
+--- kernel/include/acpica/acdisasm.h	2018-12-13 17:16:47.000000000 +0100
++++ kernel/include/acpica/acdisasm.h	2018-12-13 17:16:47.000000000 +0100
+@@ -475,7 +475,7 @@
+  * dmtable and ahtable
+  */
+ extern const struct acpi_dmtable_data   acpi_dm_table_data[];
+-extern const AH_TABLE           acpi_gbl_supported_tables[];
++extern const struct ah_table    acpi_gbl_supported_tables[];
+ 
+ u8
+ acpi_dm_generate_checksum (

@@ -178,6 +178,18 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 
 				break;
 			}
+			case 'c': {
+				char c = (char) va_arg(args, int);
+
+				if(callback(ctx, &c, 1) != 1) {
+					return -1;
+				}
+
+				format++;
+				written++;
+
+				break;
+			}
 			case 'd':
 			case 'i':
 			case 'o':

@@ -3,22 +3,22 @@
 #include <stdio.h>
 #include <vy.h>
 
-ACPI_THREAD_ID AcpiOsGetThreadId(void) {
+acpi_thread_id acpi_os_get_thread_id(void) {
 	return 1;
 }
 
-ACPI_STATUS AcpiOsExecute(vy_unused ACPI_EXECUTE_TYPE Type, vy_unused ACPI_OSD_EXEC_CALLBACK Function, vy_unused void *Context) {
+acpi_status acpi_os_execute(vy_unused acpi_execute_type Type, vy_unused acpi_osd_exec_callback Function, vy_unused void *Context) {
 	panic("%s unimplemented", __func__);
 }
 
-void AcpiOsSleep(UINT64 Milliseconds) {
+void acpi_os_sleep(uint64_t Milliseconds) {
 	pit_wait(Milliseconds);
 }
 
-void AcpiOsStall(vy_unused UINT32 Microseconds) {
+void acpi_os_stall(vy_unused uint32_t Microseconds) {
 	panic("%s unimplemented", __func__);
 }
 
-void AcpiOsWaitEventsComplete(void) {
+void acpi_os_wait_events_complete(void) {
 	/* TODO: figure out what this is supposed to do exactly */
 }

@@ -1,51 +1,51 @@
 #include <acpi.h>
 #include <vy.h>
 
-ACPI_STATUS AcpiOsCreateMutex(vy_unused ACPI_MUTEX *mutex) {
+acpi_status acpi_os_create_mutex(vy_unused acpi_mutex *mutex) {
 	return AE_OK;
 }
 
-void AcpiOsDeleteMutex(vy_unused ACPI_MUTEX mutex) {
+void acpi_os_delete_mutex(vy_unused acpi_mutex mutex) {
 	return;
 }
 
-ACPI_STATUS AcpiOsAcquireMutex(vy_unused ACPI_MUTEX mutex, vy_unused uint16_t timeout) {
+acpi_status acpi_os_acquire_mutex(vy_unused acpi_mutex mutex, vy_unused uint16_t timeout) {
 	return AE_OK;
 }
 
-void AcpiOsReleaseMutex(vy_unused ACPI_MUTEX mutex) {
+void acpi_os_release_mutex(vy_unused acpi_mutex mutex) {
 	return;
 }
 
-ACPI_STATUS AcpiOsCreateSemaphore(vy_unused uint32_t max_units, vy_unused uint32_t initial_units, ACPI_SEMAPHORE *s) {
-	*s = (ACPI_HANDLE) 1;
+acpi_status acpi_os_create_semaphore(vy_unused uint32_t max_units, vy_unused uint32_t initial_units, acpi_semaphore *s) {
+	*s = (acpi_handle) 1;
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsDeleteSemaphore(vy_unused ACPI_SEMAPHORE s) {
+acpi_status acpi_os_delete_semaphore(vy_unused acpi_semaphore s) {
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsWaitSemaphore(vy_unused ACPI_SEMAPHORE s, vy_unused uint32_t units, vy_unused uint16_t timeout) {
+acpi_status acpi_os_wait_semaphore(vy_unused acpi_semaphore s, vy_unused uint32_t units, vy_unused uint16_t timeout) {
 	panic("%s unimplemented", __func__);
 }
 
-ACPI_STATUS AcpiOsSignalSemaphore(vy_unused ACPI_SEMAPHORE s, vy_unused uint32_t units) {
+acpi_status acpi_os_signal_semaphore(vy_unused acpi_semaphore s, vy_unused uint32_t units) {
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsCreateLock(vy_unused ACPI_SPINLOCK *lock) {
+acpi_status acpi_os_create_lock(vy_unused acpi_spinlock *lock) {
 	return AE_OK;
 }
 
-void AcpiOsDeleteLock(vy_unused ACPI_SPINLOCK lock) {
+void acpi_os_delete_lock(vy_unused acpi_spinlock lock) {
 	return;
 }
 
-ACPI_CPU_FLAGS AcpiOsAcquireLock(vy_unused ACPI_SPINLOCK lock) {
+acpi_cpu_flags acpi_os_acquire_lock(vy_unused acpi_spinlock lock) {
 	return AE_OK;
 }
 
-void AcpiOsReleaseLock(vy_unused ACPI_SPINLOCK lock, vy_unused ACPI_CPU_FLAGS flags) {
+void acpi_os_release_lock(vy_unused acpi_spinlock lock, vy_unused acpi_cpu_flags flags) {
 	return;
 }

@@ -104,19 +104,19 @@ void apic_ack(void) {
 }
 
 void apic_init(void) {
-	ACPI_TABLE_HEADER *madt;
-	ACPI_STATUS status = AcpiGetTable((char *) "APIC", 0, &madt);
+	struct acpi_table_header *madt;
+	acpi_status status = acpi_get_table((char *) "APIC", 0, &madt);
 	assert(status == AE_OK && madt);
 
-	__asm volatile ("cli");
+	asm volatile ("cli");
 
-	uintptr_t end = (uintptr_t) madt + madt->Length;
-	madt_extended_t *madt_ext = (madt_extended_t *) ((uintptr_t) madt + sizeof(ACPI_TABLE_HEADER));
+	uintptr_t end = (uintptr_t) madt + madt->length;
+	madt_extended_t *madt_ext = (madt_extended_t *) ((uintptr_t) madt + sizeof(struct acpi_table_header));
 	lapic_addr = madt_ext->lapic_addr;
 	uint32_t madt_flags = madt_ext->flags;
 	bool bsp_apic = false;
 
-	uintptr_t ptr = (uintptr_t) madt + sizeof(ACPI_TABLE_HEADER) + sizeof(madt_extended_t);
+	uintptr_t ptr = (uintptr_t) madt + sizeof(struct acpi_table_header) + sizeof(madt_extended_t);
 
 	while(ptr < end) {
 		madt_entry_t *entry = (madt_entry_t *) ptr;
@@ -183,7 +183,7 @@ void apic_init(void) {
 		ptr += entry->len;
 	}
 
-	ptr = (uintptr_t) madt + sizeof(ACPI_TABLE_HEADER) + sizeof(madt_extended_t);
+	ptr = (uintptr_t) madt + sizeof(struct acpi_table_header) + sizeof(madt_extended_t);
 
 	while(ptr < end) {
 		madt_entry_t *entry = (madt_entry_t *) ptr;
@@ -201,12 +201,12 @@ void apic_init(void) {
 
 				/* the SCI interrupt is always active low, level triggered (ACPI 5.0 Errata A, section 5.2.9, table 5-34, p. 114) */
 				if((flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_ACTIVE_HIGH || (flags & ACPI_MADT_POLARITY_MASK) == ACPI_MADT_POLARITY_CONFORMS) {
-					if(gsi != AcpiGbl_FADT.SciInterrupt) {
+					if(gsi != acpi_gbl_FADT.sci_interrupt) {
 						irq_flags |= REDTBL_ACTIVE_HIGH;
 					}
 				}
 
-				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL || gsi == AcpiGbl_FADT.SciInterrupt) {
+				if((flags & ACPI_MADT_TRIGGER_MASK) == ACPI_MADT_TRIGGER_LEVEL || gsi == acpi_gbl_FADT.sci_interrupt) {
 					irq_flags |= REDTBL_TRIGGER_LEVEL;
 				}
 

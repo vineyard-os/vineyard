@@ -3,19 +3,19 @@
 #include <stdio.h>
 #include <vy.h>
 
-ACPI_STATUS AcpiOsInitialize(void) {
+acpi_status acpi_os_initialize(void) {
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsTerminate(void) {
+acpi_status acpi_os_terminate(void) {
 	return AE_OK;
 }
 
-ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(void) {
+acpi_physical_address acpi_os_get_root_pointer(void) {
 	return (uintptr_t) info.rsdp;
 }
 
-ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES *PredefinedObject, ACPI_STRING *NewValue) {
+acpi_status acpi_os_predefined_override(const struct acpi_predefined_names *PredefinedObject, acpi_string *NewValue) {
 	if(!PredefinedObject || !NewValue) {
 		return AE_BAD_PARAMETER;
 	}
@@ -24,17 +24,17 @@ ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES *PredefinedObje
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsTableOverride(vy_unused ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEADER **NewTable) {
+acpi_status acpi_os_table_override(vy_unused struct acpi_table_header *ExistingTable, struct acpi_table_header **NewTable) {
 	*NewTable = 0;
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsPhysicalTableOverride(vy_unused ACPI_TABLE_HEADER *ExistingTable, ACPI_PHYSICAL_ADDRESS *NewAddress, vy_unused UINT32 *NewTableLength) {
+acpi_status acpi_os_physical_table_override(vy_unused struct acpi_table_header *ExistingTable, acpi_physical_address *NewAddress, vy_unused uint32_t *NewTableLength) {
 	*NewAddress = 0;
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiDbSingleStep(void *state vy_unused, void *op vy_unused, uint32_t optype vy_unused) {
+acpi_status AcpiDbSingleStep(void *state vy_unused, void *op vy_unused, uint32_t optype vy_unused) {
 	panic("%s unimplemented", __func__);
 }
 
@@ -42,7 +42,7 @@ void AcpiDbSignalBreakPoint(void *state vy_unused) {
 	panic("%s unimplemented", __func__);
 }
 
-void AcpiDbDumpMethodInfo(ACPI_STATUS status vy_unused, void *state vy_unused) {
+void AcpiDbDumpMethodInfo(acpi_status status vy_unused, void *state vy_unused) {
 	panic("%s unimplemented", __func__);
 }
 

@@ -5,7 +5,7 @@
 no_warn(-Wformat-nonliteral)
 no_warn_clang(-Wused-but-marked-unused)
 
-void AcpiOsPrintf(const char *format, ...) {
+void acpi_os_printf(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
@@ -16,12 +16,12 @@ void AcpiOsPrintf(const char *format, ...) {
 	va_end(args);
 }
 
-void AcpiOsVprintf(vy_unused const char *format, vy_unused va_list args) {
+void acpi_os_vprintf(vy_unused const char *format, vy_unused va_list args) {
 #ifdef ACPI_DEBUG
 	vprintf(format, args);
 #endif
 }
 
-void AcpiOsRedirectOutput(vy_unused void *destination) {
+void acpi_os_redirect_output(vy_unused void *destination) {
 	panic("%s unimplemented", __func__);
 }

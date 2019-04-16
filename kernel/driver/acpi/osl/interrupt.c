@@ -2,14 +2,14 @@
 #include <int/isr.h>
 #include <vy.h>
 
-static ACPI_OSD_HANDLER handler;
+static acpi_osd_handler handler;
 static void *context;
 
 static void acpi_handler(vy_unused cpu_state_t *frame) {
 	handler(context);
 }
 
-ACPI_STATUS AcpiOsInstallInterruptHandler(uint32_t interrupt, ACPI_OSD_HANDLER hand, void *ctx) {
+acpi_status acpi_os_install_interrupt_handler(uint32_t interrupt, acpi_osd_handler hand, void *ctx) {
 	isr_register(interrupt + 32, acpi_handler);
 
 	handler = hand;
@@ -18,7 +18,7 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(uint32_t interrupt, ACPI_OSD_HANDLER h
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsRemoveInterruptHandler(uint32_t interrupt, vy_unused ACPI_OSD_HANDLER hand) {
+acpi_status acpi_os_remove_interrupt_handler(uint32_t interrupt, vy_unused acpi_osd_handler hand) {
 	isr_unregister(interrupt + 32);
 
 	return AE_OK;

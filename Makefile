@@ -73,10 +73,13 @@ $(ACPICA_DIR):
 	mkdir -p $(ACPICA_DIR)
 	$(call run,"WGET",wget $(ACPICA_URL) -O $(ACPICA_TAR) -qq)
 	tar -xf $(ACPICA_TAR) -C $(ACPICA_DIR) --strip-components=1
+	make -C $(ACPICA_DIR) acpisrc
 	mkdir -p kernel/acpica
 	cp $(ACPICA_DIR)/source/components/{dispatcher,events,executer,hardware,parser,namespace,utilities,tables,resources}/*.c kernel/acpica/
+	$(ACPICA_DIR)/generate/unix/bin/acpisrc -ldqy kernel/acpica/ kernel/acpica/
 	mkdir -p kernel/include/acpica
 	cp -R $(ACPICA_DIR)/source/include/* kernel/include/acpica/
+	$(ACPICA_DIR)/generate/unix/bin/acpisrc -ldqy kernel/include/acpica/ kernel/include/acpica/
 	$(call run,"PATCH",patch -p0 < patches/acpica.patch)
 	$(call run,"FIXUP",php util/acpica-fixup kernel/acpica)
 

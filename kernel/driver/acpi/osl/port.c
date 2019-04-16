@@ -2,7 +2,7 @@
 #include <cpu/ports.h>
 #include <vy.h>
 
-ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS addr, uint32_t *value, uint32_t width) {
+acpi_status acpi_os_read_port(acpi_io_address addr, uint32_t *value, uint32_t width) {
 	uint16_t a = (uint16_t) addr;
 
 	switch(width) {
@@ -26,7 +26,7 @@ ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS addr, uint32_t *value, uint32_t width
 	return AE_OK;
 }
 
-ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS addr, uint32_t value, uint32_t width) {
+acpi_status acpi_os_write_port(acpi_io_address addr, uint32_t value, uint32_t width) {
 	uint16_t a = (uint16_t) addr;
 
 	switch(width) {

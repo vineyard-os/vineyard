@@ -1,4 +1,6 @@
 #include <acpi.h>
+#include <acpi/ec.h>
+#include <acpi/irq.h>
 #include <int/apic.h>
 #include <time/pit.h>
 #include <stdbool.h>
@@ -8,71 +10,97 @@
 no_warn(-Wunused-parameter)
 no_warn(-Wnull-pointer-arithmetic)
 
-static ACPI_STATUS acpi_ec_handler(uint32_t function, ACPI_PHYSICAL_ADDRESS address, uint32_t bits, uint64_t *value, void *handler_context, void *region_context) {
-	return AE_OK;
-}
-
-static void acpi_global_event_handler(UINT32 type, vy_unused ACPI_HANDLE device, UINT32 number, vy_unused void* context) {
+static void acpi_global_event_handler(uint32_t type, vy_unused acpi_handle device, uint32_t number, vy_unused void* context) {
 	if(type == ACPI_EVENT_TYPE_FIXED && number == ACPI_EVENT_POWER_BUTTON) {
 		acpi_shutdown();
 	}
 }
 
-void acpi_init(void) {
-	ACPI_STATUS status;
+static acpi_status acpi_walk_devices(acpi_handle object, uint32_t nesting_level, void *context, void **return_value) {
+	struct acpi_device_info *dev_info;
+	acpi_status status = acpi_get_object_info(object, &dev_info);
 
-	status = AcpiInitializeSubsystem();
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		panic("ACPI failure %u @ acpi_get_object_info", status);
+		return AE_ERROR;
+	}
+
+	acpi_irq_process(dev_info, object);
+
+	return AE_OK;
+}
+
+void acpi_init(void) {
+	acpi_status status;
+
+	status = acpi_initialize_subsystem();
+	if(ACPI_FAILURE(status)) {
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiInitializeSubsystem", status);
 	}
 
-	status = AcpiInitializeTables(NULL, 32, true);
+	status = acpi_initialize_tables(NULL, 32, true);
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiInitializeTables", status);
 	}
 
-	status = AcpiLoadTables();
+	status = acpi_load_tables();
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiLoadTables", status);
 	}
 
 	apic_init();
 
-	status = AcpiInstallAddressSpaceHandler(ACPI_ROOT_OBJECT, ACPI_ADR_SPACE_EC, &acpi_ec_handler, NULL, NULL);
+	status = acpi_enable_subsystem(ACPI_FULL_INITIALIZATION);
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
-		panic("ACPI failure %u @ AcpiInstallAddressSpaceHandler", status);
-	}
-
-	status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
-	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiEnableSubsystem", status);
 	}
 
-	status = AcpiInstallGlobalEventHandler(acpi_global_event_handler, NULL);
+	acpi_ec_init();
+
+	status = acpi_install_global_event_handler(acpi_global_event_handler, NULL);
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiInstallGlobalEventHandler", status);
 	}
 
-	status = AcpiInitializeObjects(ACPI_FULL_INITIALIZATION);
+	status = acpi_initialize_objects(ACPI_FULL_INITIALIZATION);
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiInitializeObjects", status);
+	}
+
+	struct acpi_object_list        ArgList;
+	union acpi_object             Arg[1];
+
+	ArgList.count = 1;
+	ArgList.pointer = Arg;
+
+	Arg[0].type = ACPI_TYPE_INTEGER;
+	Arg[0].integer.value = 1;
+
+	status = acpi_evaluate_object(NULL, (acpi_string) "\\_PIC", &ArgList, NULL);
+	if(ACPI_FAILURE(status) && status != AE_NOT_FOUND) {
+		acpi_terminate();
+		panic("ACPI failure %u @ AcpiEvaluateObject(_PIC)", status);
 	}
 
 	apic_enable();
 
-	status = AcpiEnableEvent(ACPI_EVENT_POWER_BUTTON, 0);
+	status = acpi_enable_event(ACPI_EVENT_POWER_BUTTON, 0);
 	if(ACPI_FAILURE(status)) {
-		AcpiTerminate();
+		acpi_terminate();
 		panic("ACPI failure %u @ AcpiEnableEvent", status);
 	}
 
-	pit_wait(10);
 	asm volatile ("sti");
+
+	status = acpi_get_devices(NULL, acpi_walk_devices, NULL, NULL);
+	if(ACPI_FAILURE(status)) {
+		acpi_terminate();
+		panic("ACPI failure %u @ AcpiGetDevices", status);
+	}
 }

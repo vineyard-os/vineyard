@@ -1,10 +1,10 @@
 #include <acpi.h>
 #include <vy.h>
 
-ACPI_STATUS AcpiOsReadMemory(vy_unused ACPI_PHYSICAL_ADDRESS addr, vy_unused UINT64 *value, vy_unused UINT32 width) {
+acpi_status acpi_os_read_memory(vy_unused acpi_physical_address addr, vy_unused uint64_t *value, vy_unused uint32_t width) {
 	panic("%s unimplemented", __func__);
 }
 
-ACPI_STATUS AcpiOsWriteMemory(vy_unused ACPI_PHYSICAL_ADDRESS addr, vy_unused UINT64 value, vy_unused UINT32 width) {
+acpi_status acpi_os_write_memory(vy_unused acpi_physical_address addr, vy_unused uint64_t value, vy_unused uint32_t width) {
 	panic("%s unimplemented", __func__);
 }
