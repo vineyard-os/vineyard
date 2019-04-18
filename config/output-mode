@@ -9,3 +9,7 @@ else ifeq ($(MODE),dir)
 else
 	$(error)
 endif
+
+define HDD_FDISK
+"o\nn\np\n1\n16384\n\nt\nb\nw\n"
+endef

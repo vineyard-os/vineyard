@@ -19,7 +19,8 @@ void *acpi_os_map_memory(acpi_physical_address PhysicalAddress, acpi_size length
 
 void acpi_os_unmap_memory(void *where, acpi_size length) {
 	uintptr_t addr = (uintptr_t) where & ~0xFFFUL;
-	size_t len = ALIGN_UP(length, 0x1000);
+	size_t overhang = ((uintptr_t) where & 0xFFF);
+	size_t len = ALIGN_UP((length + overhang), 0x1000);
 	assert(len == mm_virtual_free(addr));
 }
 
