@@ -97,10 +97,10 @@ clean-uni-vga:
 	$(call run,"RM", rm -rf $(UNI-VGA_DIR))
 
 clean-acpica:
-	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR))
+	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR) bin/libacpica.a $(ACPICA_OBJ))
 
 clean-libacpica:
-	$(call run,"RM", rm -f bin/libacpica.a)
+	$(call run,"RM", rm -f bin/libacpica.a $(ACPICA_OBJ))
 
 .PHONY: setup test test-vbox clean clean-bin clean-font clean-uni-vga clean-acpica clean-libacpica clean-vbox
 

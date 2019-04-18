@@ -54,8 +54,8 @@ void pit_wait(size_t ms) {
 		uint16_t count = (total_count > 0xFFFFU) ? 0xFFFFU : (uint16_t) total_count;
 
 		outb(PORT_CMD, CMD_ACC_LOHI);
-		outb(PORT_CH0, count & 0xFF);
-		outb(PORT_CH0, count >> 8);
+		outb(PORT_CH0, (uint8_t) (count & 0xFF));
+		outb(PORT_CH0, (uint8_t) (count >> 8));
 
 		do {
 			asm volatile ("pause");

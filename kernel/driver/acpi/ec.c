@@ -4,7 +4,7 @@
 #include <vy.h>
 
 no_warn(-Wunused-parameter)
-no_warn(-Wnull-pointer-arithmetic)
+no_warn_clang(-Wnull-pointer-arithmetic)
 
 #define EC_EVENT_OUTPUT_BUFFER_FULL 0x01
 #define EC_EVENT_INPUT_BUFFER_EMPTY 0x02

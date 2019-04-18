@@ -8,7 +8,7 @@
 #include <vy.h>
 
 no_warn(-Wunused-parameter)
-no_warn(-Wnull-pointer-arithmetic)
+no_warn_clang(-Wnull-pointer-arithmetic)
 
 static void acpi_global_event_handler(uint32_t type, vy_unused acpi_handle device, uint32_t number, vy_unused void* context) {
 	if(type == ACPI_EVENT_TYPE_FIXED && number == ACPI_EVENT_POWER_BUTTON) {

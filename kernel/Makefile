@@ -20,7 +20,7 @@ KERNEL_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 KERNEL			:= bin/hdd/kernel
 
 KERNEL_CFLAGS	:= -Ikernel/include -Ilib/include -mcmodel=kernel -Wno-unreachable-code -fsanitize=undefined
-KERNEL_LDFLAGS	:= -Tkernel/link.ld -lacpica -Lbin
+KERNEL_LDFLAGS	:= -Tkernel/link.ld -Lbin -lacpica
 
 ACPICA_CFLAGS	:= $(filter-out -fsanitize=undefined,$(KERNEL_CFLAGS))
 
@@ -28,13 +28,13 @@ kernel: $(KERNEL) ## build the kernel
 
 $(KERNEL): $(KERNEL_OBJ) bin/libacpica.a
 	mkdir -p $(dir $@)
-	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_LDFLAGS) $(KERNEL_OBJ) -o $@)
+	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_OBJ) $(KERNEL_LDFLAGS) -o $@)
 ifndef USE_GCC
 	sed -e '1s/^/[\n/' -e '$$s/,$$/\n]/' $(addprefix .json/,$(addsuffix .json,$(KERNEL_OBJ_C))) >> compile_commands.json
 endif
 
 bin/libacpica.a: $(ACPICA_OBJ)
-	$(AR) rcs $@ $^
+	$(call run,AR,$(AR) rcs $@ $^)
 
 bin/acpica/%.c.o: %.c
 	mkdir -p $(dir .deps/$@)
