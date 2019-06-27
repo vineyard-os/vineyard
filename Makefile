@@ -45,14 +45,14 @@ test-gdb: setup $(LOADER) $(KERNEL) $(EMU_REQ)
 
 test-vbox: setup $(LOADER) $(KERNEL) $(HDD_VDI)
 	if ! VBoxManage list vms | grep -q \"vineyard\"; then $(VBOXMANAGE) registervm `pwd`/misc/vineyard.vbox; fi
-	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "IDE" --port 0 --device 0 --medium none 2> /dev/null || true
+	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium none 2> /dev/null || true
 	$(VBOXMANAGE) closemedium disk $(HDD_VDI)
-	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "IDE" --port 0 --device 0 --medium $(HDD_VDI) --type hdd
+	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium $(HDD_VDI) --type hdd
 	$(VBOXMANAGE) startvm $(VM_NAME) | grep -v 'VM "$(VM_NAME)"' || true
 
 test-vmware: setup $(LOADER) $(KERNEL) $(HDD_VMDK)
 	if ! command -v vmrun &> /dev/null; then echo "Error: VMWare Workstation is not installed"; fi
-	if ! grep -q bin/hdd.vmdk misc/vineyard.vmx; then echo -n 'ide1:0.fileName = "' >> misc/vineyard.vmx && echo -n $(shell pwd) >> misc/vineyard.vmx && echo -n '/bin/hdd.vmdk"' >> misc/vineyard.vmx; fi
+	if ! grep -q bin/hdd.vmdk misc/vineyard.vmx; then echo -n 'nvme0:0.fileName = "' >> misc/vineyard.vmx && echo -n $(shell pwd) >> misc/vineyard.vmx && echo -n '/bin/hdd.vmdk"' >> misc/vineyard.vmx; fi
 	$(call run,"VMWARE",vmrun start misc/vineyard.vmx)
 
 clean:

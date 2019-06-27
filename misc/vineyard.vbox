@@ -20,7 +20,7 @@
       </GuestProperties>
     </Hardware>
     <StorageControllers>
-      <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
+      <StorageController name="SATA" type="NVMe" PortCount="1" useHostIOCache="false" Bootable="true">
       </StorageController>
     </StorageControllers>
   </Machine>
