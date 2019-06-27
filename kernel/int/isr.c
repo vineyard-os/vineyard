@@ -42,10 +42,6 @@ void isr_unregister(size_t n) {
 }
 
 void isr_dispatch(cpu_state_t *state) {
-	if(state->id >= 0x20) {
-		apic_ack();
-	}
-
 	if(state->id < 0x20) {
 		printf("%s (num = %lu, error = %#010lx) @ %#018lx (%#018lx)\n", exception_type[state->id], state->id, state->error, state->rip, state->rsp);
 
@@ -58,5 +54,9 @@ void isr_dispatch(cpu_state_t *state) {
 		(*handlers[state->id])(state);
 	} else {
 		printf("no handler for interrupt %zu\n", state->id);
+	}
+
+	if(state->id >= 0x20) {
+		apic_ack();
 	}
 }
