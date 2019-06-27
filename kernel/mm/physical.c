@@ -27,6 +27,7 @@ struct mm_physical_stack {
 /* make sure that the stack struct is actually the size it is supposed to be (4096 bytes) */
 static_assert(sizeof(struct mm_physical_stack) == 0x1000, "unexpected struct mm_physical_stack size");
 
+#ifdef CONFIG_PMM_DEBUG
 /* strings for printing out EFI memory types */
 static const char *memory_map_types[] = {
 	[EfiReservedMemoryType] = "Reserved",
@@ -45,6 +46,7 @@ static const char *memory_map_types[] = {
 	[EfiPalCode] = "Pal Code",
 	[EfiPersistentMemory] = "Persistent Memory",
 };
+#endif
 
 /* pointer to the level 1 page table holding the stack at index 511 */
 uint64_t *mm_physical_stack_pml1;
@@ -156,14 +158,16 @@ void mm_physical_init(void) {
 		uintptr_t start = (uintptr_t) desc->PhysicalStart;
 		size_t size = desc->NumberOfPages << PAGE_SHIFT;
 		size_t pages = desc->NumberOfPages;
-		uintptr_t end = (uintptr_t) desc->PhysicalStart + (desc->NumberOfPages << PAGE_SHIFT) - 1;
 		efi_memory_type type = (efi_memory_type) desc->Type;
 
 		if(type != EfiMemoryMappedIO && type != EfiMemoryMappedIOPortSpace && type != EfiUnusableMemory) {
 			up += size;
 		}
 
+#ifdef CONFIG_PMM_DEBUG
+		uintptr_t end = (uintptr_t) desc->PhysicalStart + (desc->NumberOfPages << PAGE_SHIFT) - 1;
 		printf("[pmm]	normal: %#018lx - %#018lx (%zu KiB) [%s]\n", start, end, size >> 10, memory_map_types[type]);
+#endif
 
 		if(type == EfiConventionalMemory || type == EfiBootServicesCode || type == EfiBootServicesData) {
 			for(size_t i = 0; i < pages; i++) {

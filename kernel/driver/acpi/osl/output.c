@@ -9,7 +9,7 @@ void acpi_os_printf(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
-#ifdef ACPI_DEBUG
+#ifdef CONFIG_ACPI_DEBUG
 	vprintf(format, args);
 #endif
 
@@ -17,7 +17,7 @@ void acpi_os_printf(const char *format, ...) {
 }
 
 void acpi_os_vprintf(vy_unused const char *format, vy_unused va_list args) {
-#ifdef ACPI_DEBUG
+#ifdef CONFIG_ACPI_DEBUG
 	vprintf(format, args);
 #endif
 }

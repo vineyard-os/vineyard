@@ -26,7 +26,7 @@ ACPICA_CFLAGS	:= $(filter-out -fsanitize=undefined,$(KERNEL_CFLAGS))
 
 kernel: $(KERNEL) ## build the kernel
 
-$(KERNEL): $(KERNEL_OBJ) bin/libacpica.a
+$(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a
 	mkdir -p $(dir $@)
 	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_OBJ) $(KERNEL_LDFLAGS) -o $@)
 ifndef USE_GCC
@@ -62,5 +62,10 @@ bin/kernel/%.s.o: %.s
 
 kernel/driver/graphics/font.c: $(UNI-VGA)
 	$(call run,"FONT",util/bdf-to-c $< > $@)
+
+kernel/include/kconfig.h: Kconfig .config
+	genconfig --header-path $@
+
+-include $(KERNEL_DEP)
 
 .PHONY: $(KERNEL_CRTBEGIN) $(KERNEL_CRTEND)

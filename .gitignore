@@ -3,6 +3,7 @@ third-party/
 kernel/driver/graphics/font.c
 kernel/acpica/
 kernel/include/acpica/
+kernel/include/kconfig.h
 
 compile_commands.json
 

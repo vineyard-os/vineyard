@@ -127,7 +127,7 @@ void apic_init(void) {
 					uint8_t id = entry->lapic.id;
 					uint8_t apic_id = entry->lapic.apic_id;
 
-#ifdef ACPI_DEBUG
+#ifdef CONFIG_ACPI_DEBUG
 					printf("[apic]	LAPIC: id %hhu, apic_id %hhu\n", id, apic_id);
 #endif
 					if(!bsp_apic) {
@@ -193,7 +193,7 @@ void apic_init(void) {
 				uint8_t irq = entry->intr.irq;
 				uint32_t gsi = entry->intr.gsi;
 				uint16_t flags = entry->intr.flags;
-#ifdef ACPI_DEBUG
+#ifdef CONFIG_ACPI_DEBUG
 				uint8_t bus = entry->intr.bus;
 				printf("[apic]	Interrupt Source Override: bus %hhu, IRQ source %hhu, Global System Interrupt %u, active %s %s\n", bus, irq, gsi, (flags & 2) ? "low" : "high", (flags & 8) ? "level" : "edge");
 #endif

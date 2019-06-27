@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <kconfig.h>
 
 #define vy_unused __attribute__((unused))
 #define vy_pure __attribute__((pure))

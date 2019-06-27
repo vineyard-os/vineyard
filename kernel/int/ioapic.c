@@ -38,7 +38,7 @@ void ioapic_init(size_t id, uintptr_t addr, size_t irq_base) {
 	ioapic->irq_base = irq_base;
 	ioapic->irqs = ((ioapic_read(ioapic, 1) >> 16) & 0xFF) + 1;
 
-#ifdef ACPI_DEBUG
+#ifdef CONFIG_ACPI_DEBUG
 	printf("[apic]	ioapic id %zu (%018lx) for %zu IRQs starting at %zu\n", id, addr, ioapic->irqs, irq_base);
 #endif
 

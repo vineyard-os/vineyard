@@ -1,0 +1,25 @@
+mainmenu "vineyard configuration"
+
+menuconfig DEBUG
+	bool "Enable debug output"
+	default n
+
+if DEBUG
+
+config NVME_DEBUG
+	bool "Enable debug output for NVMe"
+	default n
+
+config ACPI_DEBUG
+	bool "Enable debug output for ACPI"
+	default n
+
+config PMM_DEBUG
+	bool "Enable debug output for the physical memory manager"
+	default n
+
+config VMM_DEBUG
+	bool "Enable debug output for the virtual memory manager"
+	default n
+
+endif

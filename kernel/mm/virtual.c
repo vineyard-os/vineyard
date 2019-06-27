@@ -415,7 +415,9 @@ vy_status_t mm_virtual_init(void) {
 	/* kernel */
 	mm_virtual_range_set(0xFFFFFFFF80000000, PAGE_UP((uintptr_t) &KERNEL_SIZE), VM_USED);
 
+#ifdef CONFIG_VMM_DEBUG
 	mm_virtual_dump();
+#endif
 
 	return VY_OK;
 }
