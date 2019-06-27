@@ -228,7 +228,7 @@ int vcbprintf(void *ctx, size_t (*callback)(void *ctx, const char *string, size_
 						goto unknown_conversion;
 					}
 
-					value = (negative = signed_value < 0) ? - (uintmax_t) signed_value : (uintmax_t) signed_value;
+					value = (negative = (signed_value < 0)) ? (- (uintmax_t) signed_value) : (uintmax_t) signed_value;
 				} else {
 					if(length == LENGTH_SHORT_SHORT) {
 						value = va_arg(args, unsigned int);
