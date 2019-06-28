@@ -37,4 +37,3 @@ include config/compiler
 include config/output-mode
 include config/ovmf
 include config/qemu
-include config/uni-vga

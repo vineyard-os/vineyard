@@ -17,7 +17,7 @@ else
 endif
 
 KERNEL_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
-KERNEL			:= bin/hdd/kernel
+KERNEL			:= ../boot/kernel
 
 KERNEL_CFLAGS	:= -Ikernel/include -Ilib/include -mcmodel=kernel -Wno-unreachable-code -fsanitize=undefined
 KERNEL_LDFLAGS	:= -Tkernel/link.ld -Lbin -lacpica
@@ -60,8 +60,8 @@ bin/kernel/%.s.o: %.s
 	mkdir -p $(dir bin/kernel/$<)
 	$(call run,"AS",$(AS) $(ASFLAGS) -o $@ $<)
 
-kernel/driver/graphics/font.c: $(UNI-VGA)
-	$(call run,"FONT",util/bdf-to-c $< > $@)
+kernel/driver/graphics/font.c:
+	$(call run,"FONT",util/bdf-to-c third-party/uni-vga/u_vga16.bdf > $@)
 
 kernel/include/kconfig.h: Kconfig .config
 	genconfig --header-path $@

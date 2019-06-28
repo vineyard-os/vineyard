@@ -1,9 +1,8 @@
 include config/all
 
-HDD				:= bin/hdd.img
-HDD_VDI			:= bin/hdd.vdi
-HDD_VMDK		:= bin/hdd.vmdk
-CD				:= bin/cd.iso
+HDD				:= ../hdd.img
+HDD_VDI			:= ../hdd.vdi
+HDD_VMDK		:= ../hdd.vmdk
 VBOXMANAGE		?= VBoxManage
 VM_NAME			?= vineyard
 
@@ -16,26 +15,13 @@ include kernel/Makefile
 include kernel/efistub/Makefile
 
 $(HDD): $(LOADER) $(KERNEL)
-	$(call run,"BUILD", dd if=/dev/zero of=$(HDD) bs=48M count=1 status=none)
-	echo -e $(HDD_FDISK) | fdisk $(HDD) > /dev/null
-	dd if=/dev/zero of=$(HDD).part bs=40M count=1 status=none
-	mkfs.fat -F32 -S512 $(HDD).part > /dev/null
-	mmd -i $(HDD).part ::/EFI
-	mmd -i $(HDD).part ::/EFI/BOOT
-	mcopy -i $(HDD).part bin/hdd/efi/boot/bootx64.efi ::/EFI/BOOT
-	mcopy -i $(HDD).part bin/hdd/kernel ::
-	dd if=$(HDD).part of=$(HDD) bs=512 seek=16384 status=none
+	$(call run,"BUILD", util/builder hdd.json | bash)
 
 $(HDD_VMDK): $(HDD)
 	$(call run,"IMG",qemu-img convert -f raw -O vmdk $< $@)
 
 $(HDD_VDI): $(HDD)
 	$(call run,"IMG",qemu-img convert -f raw -O vdi $< $@)
-
-$(CD): $(HDD)
-	mkdir -p iso
-	cp $(HDD) iso
-	$(call run,"ISO",xorriso -as mkisofs -R -f -e $(shell basename $(HDD)) -no-emul-boot -o $(CD) iso)
 
 test: setup $(LOADER) $(KERNEL) $(EMU_REQ)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET))
@@ -44,7 +30,7 @@ test-gdb: setup $(LOADER) $(KERNEL) $(EMU_REQ)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET) -s -S)
 
 test-vbox: setup $(LOADER) $(KERNEL) $(HDD_VDI)
-	if ! VBoxManage list vms | grep -q \"vineyard\"; then $(VBOXMANAGE) registervm `pwd`/misc/vineyard.vbox; fi
+	if ! $(VBOXMANAGE) list vms | grep -q \"vineyard\"; then $(VBOXMANAGE) registervm `pwd`/misc/vineyard.vbox; fi
 	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium none 2> /dev/null || true
 	$(VBOXMANAGE) closemedium disk $(HDD_VDI)
 	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium $(HDD_VDI) --type hdd
@@ -59,7 +45,7 @@ clean:
 	$(call run,"RM",rm -f $(KERNEL) $(LOADER) $(KERNEL_OBJ) $(LOADER_OBJ) $(KERNEL_DEP))
 
 clean-bin: clean
-	$(call run,"RM",rm -rf $(HDD) $(CD) iso compile_commands.json .json .deps bin)
+	$(call run,"RM",rm -rf $(HDD) compile_commands.json .json .deps bin)
 
 clean-font:
 	$(call run,"RM", rm -f kernel/driver/graphics/font.c)
@@ -67,17 +53,12 @@ clean-font:
 clean-vbox:
 	$(call run,"CLEAN", VBoxManage unregistervm vineyard 2> /dev/null || true)
 
-distclean: clean-bin clean-font clean-uni-vga clean-acpica clean-libacpica clean-vbox
+distclean: clean-bin clean-font clean-acpica clean-libacpica clean-vbox
 	rm -rf third-party
 
 $(OVMF):
 	mkdir -p bin
 	$(call run,"WGET",wget $(OVMF_URL) -O $(OVMF) -qq)
-
-$(UNI-VGA):
-	mkdir -p $(UNI-VGA_DIR)
-	$(call run,"WGET",wget -qq $(UNI-VGA_URL) -O $(UNI-VGA_DIR)/uni-vga.tar.gz)
-	tar xzf $(UNI-VGA_DIR)/uni-vga.tar.gz --strip-components=1 -C $(UNI-VGA_DIR)
 
 $(ACPICA_DIR):
 	mkdir -p $(ACPICA_DIR)
@@ -93,16 +74,13 @@ $(ACPICA_DIR):
 	$(call run,"PATCH",patch -s -p0 < patches/acpica.patch)
 	$(call run,"FIXUP",php util/acpica-fixup kernel/acpica)
 
-clean-uni-vga:
-	$(call run,"RM", rm -rf $(UNI-VGA_DIR))
-
 clean-acpica:
 	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR) bin/libacpica.a $(ACPICA_OBJ))
 
 clean-libacpica:
 	$(call run,"RM", rm -f bin/libacpica.a $(ACPICA_OBJ))
 
-.PHONY: setup test test-vbox clean clean-bin clean-font clean-uni-vga clean-acpica clean-libacpica clean-vbox
+.PHONY: setup test test-vbox clean clean-bin clean-font clean-acpica clean-libacpica clean-vbox
 
 .SUFFIXES:
 .SUFFIXES: .c .o

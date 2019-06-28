@@ -54,6 +54,6 @@ void nvme_init(uint8_t bus, uint8_t slot, uint8_t function) {
 	nvme_io_sq_init(controller, &controller->io_sq, 2U, &controller->io_cq);
 
 	char *buf = memalign(0x1000, 0x1000);
-	nvme_rw_read(&controller->namespace_list[0], 0x4001, buf);
+	nvme_rw_read(&controller->namespace_list[0], 0x801, buf);
 	printf("%4.4s\n", buf);
 }

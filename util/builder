@@ -1,0 +1,150 @@
+#!/usr/bin/env php
+<?php
+	function fail($string) {
+		echo "[ERROR]	".$string.PHP_EOL;
+		exit(1);
+	}
+
+	function fat32_add_contents($num, $orig, $path, $config, &$out) {
+		$f = array_diff(scandir($path), array('..', '.'));
+
+		foreach($f as $entry) {
+			$curr = $path."/".$entry;
+
+			if(is_dir($curr)) {
+				$out .= sprintf("mmd -i part%u.img ::/%s\n", $num, substr($curr, strlen($orig) + 1));
+
+				fat32_add_contents($num, $orig, $curr, $config, $out);
+			} else {
+				$out .= sprintf("mcopy -i part%u.img %s ::/%s\n", $num, $curr, substr($curr, strlen($orig) + 1));
+			}
+		}
+	}
+
+	if($argc < 2) {
+		fail("usage: ".$argv[0]." [path to config]");
+	}
+
+	$config = json_decode(file_get_contents($argv[1]));
+
+	if(!isset($config->file)) {
+		fail("no filename given in config");
+	}
+
+	if(!isset($config->size)) {
+		fail("no image size given in config");
+	}
+
+	$size_unit = substr($config->size, -1, 1);
+	$size_num = substr($config->size, 0, -1);
+
+	if($size_unit == "M") {
+		$disk_sectors = $size_num << 11;
+	} else {
+		$disk_sectors = $size_num << 21;
+	}
+
+	$units = ["M", "G"];
+	$types = ["gpt", "mbr"];
+
+	if(!is_numeric($size_num) || !in_array($size_unit, $units)) {
+		fail("invalid image size '".$config->size."' given in config");
+	}
+
+	if($config->type != "gpt") {
+		fail("unsupported image type; supported types are: ".implode(" ", $types));
+	}
+
+	$out = sprintf("#!/bin/bash\n");
+	$out .= sprintf("dd if=/dev/zero of=%s bs=1%s count=%u status=none\n", $config->file, substr($config->size, -1, 1), substr($config->size, 0, -1));
+
+	if($config->type == "gpt") {
+		$out .= sprintf("parted %s -s -a minimal mktable gpt\n", $config->file);
+	} elseif($config->type == "mbr") {
+		$out .= sprintf("parted %s -s -a minimal mktable mbr\n", $config->file);
+	} else {
+		fail("unimplemented partitioning type");
+	}
+
+	$partition_start = 2048;
+
+	$partitions = [];
+
+	foreach($config->partitions as $num => $partition) {
+		if(!isset($partition->fs)) {
+			fail(sprintf("partition %u has no specified filesystem", $num));
+		}
+
+		if(!isset($partition->size)) {
+			fail(sprintf("partition %u has no specified size", $num));
+		}
+
+		if($partition->size == "fit") {
+			assert($partition_start & ~0x100000 == 0);
+			$sectors = $disk_sectors - $partition_start - 2048 + 1;
+		} else {
+			$part_size_unit = substr($partition->size, -1, 1);
+			$part_size_num = substr($partition->size, 0, -1);
+
+			if($part_size_unit == "M") {
+				$sectors = $part_size_num << 11;
+			} else if($part_size_unit == "G") {
+				$sectors = $part_size_num << 21;
+			}
+
+			if(!is_numeric($size_num) || !in_array($size_unit, $units)) {
+				fail(sprintf("partition %u: invalid size '%s' given in config", $num, $partition->size));
+			}
+		}
+
+		$partitions[$num] = ["start" => $partition_start, "end" => $partition_start + $sectors, "size" => $sectors, "bootable" => false, "content" => NULL, "fs" => $partition->fs, "label" => NULL];
+
+		if(isset($partition->label)) {
+			$partitions[$num]["label"] = $partition->label;
+		} else {
+			fail(sprintf("no label given for partition %u", $num + 1));
+		}
+
+		$out .= sprintf("parted %s -s -a minimal mkpart %s %s %us %us\n", $config->file, $partition->label, $partition->fs, $partition_start, $partition_start + $sectors - 1);
+
+		if(isset($partition->bootable) && $partition->bootable === true) {
+			$partitions[$num]["bootable"] = true;
+			$out .= sprintf("parted %s -s -a minimal toggle %u boot\n", $config->file, $num + 1);
+		}
+
+		if(isset($partition->content)) {
+			$partitions[$num]["content"] = $partition->content;
+		}
+
+		$partition_start += $sectors;
+	}
+
+	foreach($partitions as $num => $partition) {
+		$out .= sprintf("dd if=/dev/zero of=part%u.img bs=512 count=%u status=none\n", $num + 1, $partition["size"]);
+
+		if($partition["fs"] == "btrfs") {
+			$out .= sprintf("mkfs.btrfs -q ");
+
+			if($partition["label"]) {
+				$out .= sprintf("-L %s ", $partition["label"]);
+			}
+
+			if($partition["content"]) {
+				$out .= sprintf("-r %s ", $partition["content"]);
+			}
+
+			$out .= sprintf("part%u.img\n", $num + 1);
+		} elseif($partition["fs"] == "fat32") {
+			$out .= sprintf("mkfs.fat -F32 -s 1 part%u.img\n", $num + 1);
+
+			fat32_add_contents($num + 1, $partition["content"], $partition["content"], $config, $out);
+		} else {
+			fail(sprintf("unsupported filesystem on partition %u", $num));
+		}
+
+		$out .= sprintf("dd if=part%u.img of=%s bs=512 seek=%u count=%u conv=notrunc status=none\n", $num + 1, $config->file, $partition["start"], $partition["size"]);
+		$out .= sprintf("rm -f part%u.img\n", $num + 1);
+	}
+
+	echo $out;
+?>

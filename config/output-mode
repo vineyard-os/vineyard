@@ -1,11 +1,11 @@
-# switch output modes: dir (outputs into directory at bin/hdd/), cd (build an ISO image) or fat (creates a FAT32 image at bin/hdd.img)
+# switch output modes: dir (outputs into directory at bin/hdd/) or fat (creates a FAT32 image at bin/hdd.img)
 MODE			?= dir
 
 ifeq ($(MODE),fat)
 	EMU_TARGET	 = -drive if=none,format=raw,file=$(HDD),id=vy -device nvme,drive=vy,serial=vineyard
 	EMU_REQ		+= $(HDD)
 else ifeq ($(MODE),dir)
-	EMU_TARGET	:= -drive format=raw,file=fat:rw:bin/hdd,if=none,id=vy -device pci-bridge,id=pci_bridge1,bus=pcie.0,chassis_nr=9 -device nvme,drive=vy,serial=vineyard,bus=pci_bridge1,addr=1
+	EMU_TARGET	:= -drive format=raw,file=fat:rw:../boot,if=none,id=vy -device pci-bridge,id=pci_bridge1,bus=pcie.0,chassis_nr=9 -device nvme,drive=vy,serial=vineyard,bus=pci_bridge1,addr=1
 else
 	$(error)
 endif
