@@ -1,0 +1,13 @@
+file: '../hdd.img'
+size: 200M
+type: gpt
+partitions:
+- fs: fat32
+  size: 36M
+  bootable: true
+  content: '../boot/'
+  label: boot
+- fs: btrfs
+  size: fit
+  content: '../hdd/'
+  label: vineyard

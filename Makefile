@@ -15,7 +15,7 @@ include kernel/Makefile
 include kernel/efistub/Makefile
 
 $(HDD): $(LOADER) $(KERNEL)
-	$(call run,"BUILD", util/builder hdd.json | bash)
+	$(call run,"BUILD", util/builder hdd.yaml | bash)
 
 $(HDD_VMDK): $(HDD)
 	$(call run,"IMG",qemu-img convert -f raw -O vmdk $< $@)
