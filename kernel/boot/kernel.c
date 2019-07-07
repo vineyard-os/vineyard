@@ -3,6 +3,7 @@
 #include <cpu/cpu.h>
 #include <driver/nvme.h>
 #include <efi.h>
+#include <fs/gpt.h>
 #include <mm/physical.h>
 #include <mm/virtual.h>
 #include <pci/config.h>
@@ -27,7 +28,8 @@ static bool callback(uint8_t bus, uint8_t slot, uint8_t function) {
 #ifdef CONFIG_NVME_DEBUG
 		printf("NVMe: controller at %02x:%02x.%02x\n", bus, slot, function);
 #endif
-		nvme_init(bus, slot, function);
+		nvme_t *controller = nvme_init(bus, slot, function);
+		gpt_init(&controller->namespace_list[0]);
 	}
 
 	return true;

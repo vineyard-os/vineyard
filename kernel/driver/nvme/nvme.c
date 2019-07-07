@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void nvme_init(uint8_t bus, uint8_t slot, uint8_t function) {
+nvme_t *nvme_init(uint8_t bus, uint8_t slot, uint8_t function) {
 	nvme_t *controller = calloc(1, sizeof(*controller));
 	pci_bar_t bar;
 
@@ -53,7 +53,5 @@ void nvme_init(uint8_t bus, uint8_t slot, uint8_t function) {
 	nvme_io_cq_init(controller, &controller->io_cq, 3U);
 	nvme_io_sq_init(controller, &controller->io_sq, 2U, &controller->io_cq);
 
-	char *buf = memalign(0x1000, 0x1000);
-	nvme_rw_read(&controller->namespace_list[0], 0x801, buf);
-	printf("%4.4s\n", buf);
+	return controller;
 }
