@@ -41,3 +41,7 @@ inline uint64_t min(uint64_t a, uint64_t b) {
 
 	return a;
 }
+
+void cleanup_vy_free(void *ptr);
+
+#define vy_free __attribute__((cleanup(cleanup_vy_free)))
