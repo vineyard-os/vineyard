@@ -33,7 +33,7 @@ $(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a $(HDD)
 	mmd -i $(HDD).0 ::/efi/boot -D s || true
 	mcopy -i $(HDD).0 ../boot/efi/boot/bootx64.efi ::/efi/boot/bootx64.efi -D o
 	mcopy -i $(HDD).0 ../boot/kernel ::/kernel -D o
-	util/builder-py hdd.yaml -m 0 | bash
+	$(BUILDER) hdd.yaml -m 0 | bash
 ifndef USE_GCC
 	sed -e '1s/^/[\n/' -e '$$s/,$$/\n]/' $(addprefix .json/,$(addsuffix .json,$(KERNEL_OBJ_C))) >> compile_commands.json
 endif

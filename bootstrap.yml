@@ -8,105 +8,118 @@ directories:
   pkg_builds: 'builds/package/'
 
 sources:
-  - name: binutils
-    subdir: 'tools'
-    git: 'git://sourceware.org/git/binutils-gdb.git'
-    tag: 'binutils-2_32'
-    tools_required:
-      - host-autoconf-v2.69
-      - host-automake-v1.15
-    regenerate:
-      - args: ['autoreconf']
-        workdir: '@THIS_SOURCE_DIR@/ld'
+- name: binutils
+  subdir: 'tools'
+  git: 'git://sourceware.org/git/binutils-gdb.git'
+  tag: 'binutils-2_32'
+  tools_required:
+    - host-autoconf-v2.69
+    - host-automake-v1.15
+  regenerate:
+    - args: ['autoreconf']
+      workdir: '@THIS_SOURCE_DIR@/ld'
 
 tools:
-  - name: host-autoconf-v2.64
-    source:
-      name: autoconf-v2.64
+- name: image-builder
+  source:
+    subdir: 'tools'
+    git: 'https://github.com/vineyard-os/image-builder'
+    branch: 'master'
+
+- name: ovmf
+  source:
+    subdir: 'third-party'
+    url: 'https://dl.bintray.com/no92/vineyard-binary/OVMF.fd'
+    format: 'raw'
+    filename: 'OVMF.fd'
+
+- name: host-autoconf-v2.64
+  source:
+    name: autoconf-v2.64
+    subdir: 'tools'
+    url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.64.tar.xz'
+    format: 'tar.xz'
+    extract_path: 'autoconf-2.64'
+  configure:
+    # Despite its efforts to be POSIX-compatible, autoconf 2.64 fails to configure on dash
+    # (as it assumes that echo does not evaluate backslash escapes).
+    # It *also* fails when setting CONFIG_SHELL to /bin/bash.
+    # The manual (in section "Defining Variables") mentions this bug and the following
+    # workaround: We set *both* CONFIG_SHELL *and* execute the script using /bin/bash.
+    - args: ['/bin/bash', '@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
+  environ:
+    'CONFIG_SHELL': '/bin/bash'
+  compile:
+    - args: ['make', '-j@PARALLELISM@']
+  install:
+    - args: ['make', 'install']
+
+- name: host-autoconf-v2.69
+  source:
+    name: autoconf-v2.69
+    subdir: 'tools'
+    url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.xz'
+    format: 'tar.xz'
+    extract_path: 'autoconf-2.69'
+  configure:
+    - args: ['@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
+  compile:
+    - args: ['make', '-j@PARALLELISM@']
+  install:
+    - args: ['make', 'install']
+
+- name: cross-binutils
+  from_source: binutils
+  configure:
+    - args:
+      - '@THIS_SOURCE_DIR@/configure'
+      - '--prefix=@PREFIX@'
+      - '--target=x86_64-elf'
+      - '--with-sysroot=@SYSROOT_DIR@'
+      # On recent compilers, binutils 2.26 causes implicit-fallthrough warnings, among others.
+      - '--disable-werror'
+      # -g blows up the binary size.
+      - 'CFLAGS=-O2'
+  compile:
+    - args: ['make', '-j@PARALLELISM@', 'all-binutils', 'all-gas', 'all-ld']
+  install:
+    - args: ['make', 'install-binutils', 'install-gas', 'install-ld']
+    - args: |
+        for f in @PREFIX@/bin/x86_64-elf-*; do
+          tf=$(basename $f | sed 's/x86_64-elf/x86_64-vineyard-kernel/')
+          ln -sf $(basename $f) @PREFIX@/bin/$tf
+        done
+
+- name: host-automake-v1.15
+  source:
+      name: automake-v1.15
       subdir: 'tools'
-      url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.64.tar.xz'
-      format: 'tar.xz'
-      extract_path: 'autoconf-2.64'
-    configure:
-      # Despite its efforts to be POSIX-compatible, autoconf 2.64 fails to configure on dash
-      # (as it assumes that echo does not evaluate backslash escapes).
-      # It *also* fails when setting CONFIG_SHELL to /bin/bash.
-      # The manual (in section "Defining Variables") mentions this bug and the following
-      # workaround: We set *both* CONFIG_SHELL *and* execute the script using /bin/bash.
-      - args: ['/bin/bash', '@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
-    environ:
-      'CONFIG_SHELL': '/bin/bash'
-    compile:
-      - args: ['make', '-j@PARALLELISM@']
-    install:
-      - args: ['make', 'install']
-
-  - name: host-autoconf-v2.69
-    source:
-      name: autoconf-v2.69
-      subdir: 'tools'
-      url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.xz'
-      format: 'tar.xz'
-      extract_path: 'autoconf-2.69'
-    configure:
-      - args: ['@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
-    compile:
-      - args: ['make', '-j@PARALLELISM@']
-    install:
-      - args: ['make', 'install']
-
-  - name: cross-binutils
-    from_source: binutils
-    configure:
-      - args:
-        - '@THIS_SOURCE_DIR@/configure'
-        - '--prefix=@PREFIX@'
-        - '--target=x86_64-elf'
-        - '--with-sysroot=@SYSROOT_DIR@'
-        # On recent compilers, binutils 2.26 causes implicit-fallthrough warnings, among others.
-        - '--disable-werror'
-        # -g blows up the binary size.
-        - 'CFLAGS=-O2'
-    compile:
-      - args: ['make', '-j@PARALLELISM@', 'all-binutils', 'all-gas', 'all-ld']
-    install:
-      - args: ['make', 'install-binutils', 'install-gas', 'install-ld']
-      - args: |
-          for f in @PREFIX@/bin/x86_64-elf-*; do
-            tf=$(basename $f | sed 's/x86_64-elf/x86_64-vineyard-kernel/')
-            ln -sf $(basename $f) @PREFIX@/bin/$tf
-          done
-
-  - name: host-automake-v1.15
-    source:
-        name: automake-v1.15
-        subdir: 'tools'
-        git: 'http://git.savannah.gnu.org/r/automake.git'
-        tag: 'v1.15.1'
-        tools_required:
-          - host-autoconf-v2.69
-        regenerate:
-          - args: ['./bootstrap']
-    tools_required:
-      - host-autoconf-v2.69
-    configure:
-      - args:
-        - '@THIS_SOURCE_DIR@/configure'
-        - '--prefix=@PREFIX@'
-        - 'MAKEINFO=/bin/true'
-    compile:
-      - args: ['make', '-j@PARALLELISM@']
-    install:
-      - args: ['make', 'install']
-      # Stop aclocal from complaining.
-      - args: ['ln', '-sf', '@PREFIX@/share/aclocal-1.15', '@PREFIX@/share/aclocal']
+      git: 'http://git.savannah.gnu.org/r/automake.git'
+      tag: 'v1.15.1'
+      tools_required:
+        - host-autoconf-v2.69
+      regenerate:
+        - args: ['./bootstrap']
+  tools_required:
+    - host-autoconf-v2.69
+  configure:
+    - args:
+      - '@THIS_SOURCE_DIR@/configure'
+      - '--prefix=@PREFIX@'
+      - 'MAKEINFO=/bin/true'
+  compile:
+    - args: ['make', '-j@PARALLELISM@']
+  install:
+    - args: ['make', 'install']
+    # Stop aclocal from complaining.
+    - args: ['ln', '-sf', '@PREFIX@/share/aclocal-1.15', '@PREFIX@/share/aclocal']
 
 packages:
-  - name: uni-vga
-    source:
-      subdir: 'third-party'
-      url: 'http://www.inp.nsk.su/~bolkhov/files/fonts/univga/uni-vga.tgz'
-      format: 'tar.gz'
-      extract_path: 'uni_vga'
-    configure: []
-    build: []
+- name: uni-vga
+  source:
+    subdir: 'third-party'
+    url: 'http://www.inp.nsk.su/~bolkhov/files/fonts/univga/uni-vga.tgz'
+    format: 'tar.gz'
+    extract_path: 'uni_vga'
+  configure: []
+  build: []

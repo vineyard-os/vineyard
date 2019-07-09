@@ -6,6 +6,8 @@ HDD_VMDK		:= ../hdd.vmdk
 VBOXMANAGE		?= VBoxManage
 VM_NAME			?= vineyard
 
+BUILDER			:= tools/image-builder/builder
+
 setup: $(OVMF) $(UNI-VGA) $(ACPICA_DIR)
 	echo "Setup complete, you can now proceed to building vineyard"
 
@@ -15,7 +17,7 @@ include kernel/Makefile
 include kernel/efistub/Makefile
 
 $(HDD):
-	$(call run,"BUILD", util/builder-py hdd.yaml | bash)
+	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)
 
 $(HDD_VMDK): $(LOADER) $(KERNEL)
 	$(call run,"IMG",qemu-img convert -f raw -O vmdk $< $@)
