@@ -29,6 +29,11 @@ kernel: $(KERNEL) ## build the kernel
 $(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a
 	mkdir -p $(dir $@)
 	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_OBJ) $(KERNEL_LDFLAGS) -o $@)
+	mmd -i ../part0.img ::/efi -D s || true
+	mmd -i ../part0.img ::/efi/boot -D s || true
+	mcopy -i ../part0.img ../boot/efi/boot/bootx64.efi ::/efi/boot/bootx64.efi -D o
+	mcopy -i ../part0.img ../boot/kernel ::/kernel -D o
+	util/builder-py hdd.yaml -m 0 | bash
 ifndef USE_GCC
 	sed -e '1s/^/[\n/' -e '$$s/,$$/\n]/' $(addprefix .json/,$(addsuffix .json,$(KERNEL_OBJ_C))) >> compile_commands.json
 endif

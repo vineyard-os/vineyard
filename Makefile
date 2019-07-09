@@ -14,13 +14,13 @@ hdd: $(HDD)
 include kernel/Makefile
 include kernel/efistub/Makefile
 
-$(HDD): $(LOADER) $(KERNEL)
-	$(call run,"BUILD", util/builder hdd.yaml | bash)
+$(HDD):
+	$(call run,"BUILD", util/builder-py hdd.yaml | bash)
 
-$(HDD_VMDK): $(HDD)
+$(HDD_VMDK): $(LOADER) $(KERNEL)
 	$(call run,"IMG",qemu-img convert -f raw -O vmdk $< $@)
 
-$(HDD_VDI): $(HDD)
+$(HDD_VDI): $(LOADER) $(KERNEL)
 	$(call run,"IMG",qemu-img convert -f raw -O vdi $< $@)
 
 test: setup $(LOADER) $(KERNEL) $(EMU_REQ)

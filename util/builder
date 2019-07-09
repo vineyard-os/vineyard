@@ -12,17 +12,21 @@
 			$curr = $path."/".$entry;
 
 			if(is_dir($curr)) {
-				$out .= sprintf("mmd -i part%u.img ::/%s\n", $num, substr($curr, strlen($orig) + 1));
+				$out .= sprintf("mmd -i ../part%u.img ::/%s\n", $num, substr($curr, strlen($orig) + 1));
 
 				fat32_add_contents($num, $orig, $curr, $config, $out);
 			} else {
-				$out .= sprintf("mcopy -i part%u.img %s ::/%s\n", $num, realpath($curr), substr($curr, strlen($orig) + 1));
+				$out .= sprintf("mcopy -i ../part%u.img %s ::/%s\n", $num, realpath($curr), substr($curr, strlen($orig) + 1));
 			}
 		}
 	}
 
 	if($argc < 2) {
 		fail("usage: ".$argv[0]." [path to config]");
+	}
+
+	if($argc == 3) {
+		$merge = $argv[2];
 	}
 
 	$config = yaml_parse(file_get_contents($argv[1]));
@@ -102,7 +106,7 @@
 		if(isset($partition['label'])) {
 			$partitions[$num]["label"] = $partition['label'];
 		} else {
-			fail(sprintf("no label given for partition %u", $num + 1));
+			fail(sprintf("no label given for partition %u", $num));
 		}
 
 		$out .= sprintf("parted %s -s -a minimal mkpart %s %s %us %us\n", $config['file'], $partition['label'], $partition['fs'], $partition_start, $partition_start + $sectors - 1);
@@ -120,7 +124,7 @@
 	}
 
 	foreach($partitions as $num => $partition) {
-		$out .= sprintf("dd if=/dev/zero of=part%u.img bs=512 count=%u status=none\n", $num + 1, $partition["size"]);
+		$out .= sprintf("dd if=/dev/zero of=../part%u.img bs=512 count=%u status=none\n", $num, $partition["size"]);
 
 		if($partition["fs"] == "btrfs") {
 			$out .= sprintf("mkfs.btrfs -q ");
@@ -133,17 +137,23 @@
 				$out .= sprintf("-r %s ", $partition["content"]);
 			}
 
-			$out .= sprintf("part%u.img\n", $num + 1);
+			$out .= sprintf("../part%u.img\n", $num);
 		} elseif($partition["fs"] == "fat32") {
-			$out .= sprintf("mkfs.fat -F32 -s 1 part%u.img\n", $num + 1);
+			$out .= sprintf("mkfs.fat -F32 -s 1 ../part%u.img\n", $num);
 
-			fat32_add_contents($num + 1, $partition["content"], $partition["content"], $config, $out);
+			fat32_add_contents($num, $partition["content"], $partition["content"], $config, $out);
 		} else {
 			fail(sprintf("unsupported filesystem on partition %u", $num));
 		}
 
-		$out .= sprintf("dd if=part%u.img of=%s bs=512 seek=%u count=%u conv=notrunc status=none\n", $num + 1, $config['file'], $partition["start"], $partition["size"]);
-		$out .= sprintf("rm -f part%u.img\n", $num + 1);
+		$sh_merge = sprintf("dd if=../part%u.img of=%s bs=512 seek=%u count=%u conv=notrunc status=none\n", $num, $config['file'], $partition["start"], $partition["size"]);
+
+		if(isset($merge) && $merge == $num) {
+			echo $sh_merge;
+			exit(0);
+		} else {
+			$out .= $sh_merge;
+		}
 	}
 
 	echo $out;
