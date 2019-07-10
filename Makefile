@@ -6,17 +6,14 @@ HDD_VMDK		:= ../hdd.vmdk
 VBOXMANAGE		?= VBoxManage
 VM_NAME			?= vineyard
 
-BUILDER			:= tools/image-builder/builder
-
-setup: $(OVMF) $(UNI-VGA) $(ACPICA_DIR)
-	echo "Setup complete, you can now proceed to building vineyard"
+BUILDER			:= ../tools/image-builder/builder
 
 hdd: $(HDD)
 
 include kernel/Makefile
 include kernel/efistub/Makefile
 
-$(HDD):
+$(HDD): $(LOADER)
 	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)
 
 $(HDD_VMDK): $(LOADER) $(KERNEL)
@@ -57,27 +54,6 @@ clean-vbox:
 
 distclean: clean-bin clean-font clean-acpica clean-libacpica clean-vbox
 	rm -rf third-party
-
-$(OVMF):
-	mkdir -p bin
-	$(call run,"WGET",wget $(OVMF_URL) -O $(OVMF) -qq)
-
-$(ACPICA_DIR):
-	mkdir -p $(ACPICA_DIR)
-	$(call run,"WGET",wget $(ACPICA_URL) -O $(ACPICA_TAR) -qq)
-	tar -xf $(ACPICA_TAR) -C $(ACPICA_DIR) --strip-components=1
-	make -C $(ACPICA_DIR) acpisrc > /dev/null
-	mkdir -p kernel/acpica
-	cp $(ACPICA_DIR)/source/components/{dispatcher,events,executer,hardware,parser,namespace,utilities,tables,resources}/*.c kernel/acpica/
-	$(ACPICA_DIR)/generate/unix/bin/acpisrc -ldqy kernel/acpica/ kernel/acpica/ > /dev/null 2>&1
-	mkdir -p kernel/include/acpica
-	cp -R $(ACPICA_DIR)/source/include/* kernel/include/acpica/
-	$(ACPICA_DIR)/generate/unix/bin/acpisrc -ldqy kernel/include/acpica/ kernel/include/acpica/ > /dev/null 2>&1
-	$(call run,"PATCH",patch -s -p0 < patches/acpica.patch)
-	$(call run,"FIXUP",php util/acpica-fixup kernel/acpica)
-
-clean-acpica:
-	$(call run,"RM", rm -rf $(ACPICA_DIR_C) $(ACPICA_DIR_H) $(ACPICA_DIR) $(ACPICA_TAR) bin/libacpica.a $(ACPICA_OBJ))
 
 clean-libacpica:
 	$(call run,"RM", rm -f bin/libacpica.a $(ACPICA_OBJ))

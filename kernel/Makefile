@@ -19,7 +19,7 @@ endif
 KERNEL_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 KERNEL			:= ../boot/kernel
 
-KERNEL_CFLAGS	:= -Ikernel/include -Ilib/include -mcmodel=kernel -Wno-unreachable-code -fsanitize=undefined
+KERNEL_CFLAGS	:= -I kernel/include -I lib/include -iquote kernel/include/acpica -mcmodel=kernel -Wno-unreachable-code -fsanitize=undefined
 KERNEL_LDFLAGS	:= -Tkernel/link.ld -Lbin -lacpica
 
 ACPICA_CFLAGS	:= $(filter-out -fsanitize=undefined,$(KERNEL_CFLAGS))
@@ -66,7 +66,7 @@ bin/kernel/%.s.o: %.s
 	$(call run,"AS",$(AS) $(ASFLAGS) -o $@ $<)
 
 kernel/driver/graphics/font.c:
-	$(call run,"FONT",util/bdf-to-c third-party/uni-vga/u_vga16.bdf > $@)
+	$(call run,"FONT",util/bdf-to-c ../third-party/uni-vga/u_vga16.bdf > $@)
 
 kernel/include/kconfig.h: Kconfig .config
 	genconfig --header-path $@
