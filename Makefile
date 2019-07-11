@@ -58,7 +58,7 @@ distclean: clean-bin clean-font clean-acpica clean-libacpica clean-vbox
 clean-libacpica:
 	$(call run,"RM", rm -f bin/libacpica.a $(ACPICA_OBJ))
 
-.PHONY: setup test test-vbox clean clean-bin clean-font clean-acpica clean-libacpica clean-vbox
+.PHONY: setup test test-vbox clean clean-bin clean-font clean-libacpica clean-vbox
 
 .SUFFIXES:
 .SUFFIXES: .c .o

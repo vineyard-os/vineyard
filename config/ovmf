@@ -1,3 +1,0 @@
-OVMF_URL		:= https://dl.bintray.com/no92/vineyard-binary/OVMF.fd
-OVMF_BIN		:= OVMF.fd
-OVMF			:= bin/$(OVMF_BIN)

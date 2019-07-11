@@ -35,5 +35,4 @@ endef
 include config/acpica
 include config/compiler
 include config/output-mode
-include config/ovmf
 include config/qemu

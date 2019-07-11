@@ -3,12 +3,14 @@ third-party/
 kernel/driver/graphics/font.c
 kernel/acpica/
 kernel/include/acpica/
+kernel/include/efi
 kernel/include/kconfig.h
 
 compile_commands.json
 
 .*
 !.git*
+*.xbstrap
 
 misc/*
 tools/*
