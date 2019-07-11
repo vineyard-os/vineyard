@@ -1,10 +1,10 @@
-include config/all
-
 HDD				:= ../hdd.img
 HDD_VDI			:= ../hdd.vdi
 HDD_VMDK		:= ../hdd.vmdk
 VBOXMANAGE		?= VBoxManage
 VM_NAME			?= vineyard
+
+include config/all
 
 BUILDER			:= ../tools/image-builder/builder
 
@@ -22,11 +22,11 @@ $(HDD_VMDK): $(LOADER) $(KERNEL)
 $(HDD_VDI): $(LOADER) $(KERNEL)
 	$(call run,"IMG",qemu-img convert -f raw -O vdi $< $@)
 
-test: setup $(LOADER) $(KERNEL) $(EMU_REQ)
-	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET))
+test: setup $(LOADER) $(KERNEL) $(HDD)
+	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS))
 
-test-gdb: setup $(LOADER) $(KERNEL) $(EMU_REQ)
-	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) $(EMU_TARGET) -s -S)
+test-gdb: setup $(LOADER) $(KERNEL) $(HDD)
+	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) -s -S)
 
 test-vbox: setup $(LOADER) $(KERNEL) $(HDD_VDI)
 	if ! $(VBOXMANAGE) list vms | grep -q \"vineyard\"; then $(VBOXMANAGE) registervm `pwd`/misc/vineyard.vbox; fi

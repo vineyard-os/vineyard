@@ -1,9 +1,2 @@
-# switch output modes: fat (creates a FAT32 image at bin/hdd.img)
-MODE			?= fat
-
-ifeq ($(MODE),fat)
-	EMU_TARGET	 = -drive if=none,format=raw,file=$(HDD),id=vy -device nvme,drive=vy,serial=vineyard
-	EMU_REQ		+= $(HDD)
-else
-	$(error)
-endif
+EMU_TARGET	 = -drive if=none,format=raw,file=$(HDD),id=vy -device nvme,drive=vy,serial=vineyard
+EMU_REQ		+= $(HDD)
