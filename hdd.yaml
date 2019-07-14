@@ -1,4 +1,6 @@
 file: '../hdd.img'
+vmdk: '../hdd.vmdk'
+vdi: '../hdd.vdi'
 size: 200M
 type: gpt
 partitions:

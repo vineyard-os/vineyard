@@ -17,10 +17,10 @@ $(HDD): $(LOADER)
 	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)
 
 $(HDD_VMDK): $(LOADER) $(KERNEL)
-	$(call run,"IMG",qemu-img convert -f raw -O vmdk $< $@)
+	$(call run,"BUILD",$(BUILDER) hdd.yaml --vmdk | bash)
 
 $(HDD_VDI): $(LOADER) $(KERNEL)
-	$(call run,"IMG",qemu-img convert -f raw -O vdi $< $@)
+	$(call run,"BUILD",$(BUILDER) hdd.yaml --vdi | bash)
 
 test: setup $(LOADER) $(KERNEL) $(HDD)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS))
