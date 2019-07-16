@@ -16,8 +16,17 @@ static const char *type_check_kinds[] = {
 	"downcast of",
 	"upcast of",
 	"cast to virtual base of",
-	"_Nonnull binding to"
+	"_Nonnull binding to",
+	"dynamic operation on",
 };
+
+static const char *ubsan_type_check_kind(uint8_t index) {
+	if(index < 12) {
+		return type_check_kinds[index];
+	} else {
+		return "(unknown)";
+	}
+}
 
 static void	ubsan_location(struct source_location *l) {
 	printf("%s:%u:%u: ", l->file, l->line, l->column);
@@ -65,7 +74,12 @@ void __ubsan_handle_out_of_bounds(struct out_of_bounds_data *data, uintptr_t ind
 
 void __ubsan_handle_type_mismatch_v1(struct type_mismatch_info *data, uintptr_t ptr) {
 	ubsan_location(&data->location);
-	panic("%s %#lx", type_check_kinds[data->type_check_kind], ptr);
+
+	if(data->alignment && (ptr & (data->alignment - 1)) != 0) {
+		panic("unaligned access to %#lx (of type %s), which requires %lu-byte alignment", ptr, data->type->name, 1UL << data->alignment);
+	} else {
+		panic("%s %#lx (of type %s)", ubsan_type_check_kind(data->type_check_kind), ptr, data->type->name);
+	}
 }
 
 void __ubsan_handle_invalid_builtin(struct invalid_builtin_data *data) {
