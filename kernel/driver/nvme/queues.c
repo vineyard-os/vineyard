@@ -42,7 +42,7 @@ void nvme_io_cq_init(nvme_t *controller, nvme_cq_t *cq, uint16_t index) {
 
 	nvme_cq_init(controller, cq, index, length);
 
-	nvme_sq_entry_t *cmd = nvme_command_create(&controller->admin_sq, 5U, NULL, mm_virtual_get_phys((uintptr_t) cq->entry));
+	nvme_sq_entry_t *cmd = nvme_command_create(&controller->admin_sq, 5U, 0, mm_virtual_get_phys((uintptr_t) cq->entry));
 
 	cmd->dword[10] = (cq->mask << 16) | (index >> 1);
 	cmd->dword[11] = 1;
@@ -64,7 +64,7 @@ void nvme_io_sq_init(nvme_t *controller, nvme_sq_t *sq, uint16_t index, nvme_cq_
 
 	nvme_sq_init(controller, sq, index, length, cq);
 
-	nvme_sq_entry_t *cmd = nvme_command_create(&controller->admin_sq, 1U, NULL, mm_virtual_get_phys((uintptr_t) sq->entry));
+	nvme_sq_entry_t *cmd = nvme_command_create(&controller->admin_sq, 1U, 0, mm_virtual_get_phys((uintptr_t) sq->entry));
 
 	cmd->dword[10] = (sq->mask << 16) | (index >> 1);
 	cmd->dword[11] = (index >> 1) << 16 | 1;

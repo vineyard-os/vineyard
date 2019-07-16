@@ -33,7 +33,7 @@ nvme_cq_entry_t *nvme_command_cqe(nvme_sq_t *sq) {
 
 	nvme_cq_entry_t *cqe = &cq->entry[cq->head];
 	if(((cq->head + 1) & cq->mask) != cq->head + 1) {
-		cq->phase = ~cq->phase;
+		cq->phase = (uint8_t) ~cq->phase;
 	}
 
 	cq->head = (cq->head + 1) & cq->mask;
