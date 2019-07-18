@@ -22,4 +22,8 @@ config VMM_DEBUG
 	bool "Enable debug output for the virtual memory manager"
 	default n
 
+config PCIE_DEBUG
+	bool "Enable debug output for PCIe"
+	default n
+
 endif

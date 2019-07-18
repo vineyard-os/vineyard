@@ -7,6 +7,7 @@
 #include <mm/physical.h>
 #include <mm/virtual.h>
 #include <pci/config.h>
+#include <pci/express.h>
 #include <pci/walk.h>
 #include <uefi.h>
 #include <vy.h>
@@ -18,7 +19,7 @@ info_t info;
 void _init(void);
 
 static bool callback(uint8_t bus, uint8_t slot, uint8_t function) {
-	uint16_t classes = pci_config_class(bus, slot, function);
+	uint16_t classes = pci_express_read(bus, 0, slot, function, 0x0A) & 0xFFFF;
 
 #ifdef CONFIG_PCI_DEBUG
 	printf("PCI %02x:%02x.%02x %#x\n", bus, slot, function, pci_config_class(bus, slot, function));
@@ -47,6 +48,7 @@ efi_status main(efi_handle h, efi_system_table *st, uintptr_t vy_unused copy) {
 	mm_virtual_init();
 	acpi_init();
 
+	pci_express_init();
 	pci_walk_devices(&callback);
 
 	printf("vineyard\n");
