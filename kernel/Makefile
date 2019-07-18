@@ -16,7 +16,6 @@ else
 	KERNEL_OBJ	:= $(KERNEL_CRTI) $(KERNEL_CRTBEGIN) $(addprefix bin/kernel/,$(addsuffix .o,$(KERNEL_SRC))) $(KERNEL_CRTEND) $(KERNEL_CRTN)
 endif
 
-KERNEL_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 KERNEL			:= ../boot/kernel
 
 KERNEL_CFLAGS	:= -I kernel/include -I lib/include -iquote kernel/include/acpica -mcmodel=kernel -Wno-unreachable-code -fsanitize=undefined
@@ -34,9 +33,6 @@ $(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a $(HDD)
 	mcopy -i $(HDD).0 ../boot/efi/boot/bootx64.efi ::/efi/boot/bootx64.efi -D o
 	mcopy -i $(HDD).0 ../boot/kernel ::/kernel -D o
 	$(BUILDER) hdd.yaml -m 0 --vmdk --vdi | bash
-ifndef USE_GCC
-	sed -e '1s/^/[\n/' -e '$$s/,$$/\n]/' $(addprefix .json/,$(addsuffix .json,$(KERNEL_OBJ_C))) >> compile_commands.json
-endif
 
 bin/libacpica.a: $(ACPICA_OBJ)
 	$(call run,AR,$(AR) rcs $@ $^)
@@ -70,7 +66,5 @@ kernel/driver/graphics/font.c:
 
 kernel/include/kconfig.h: Kconfig .config
 	genconfig --header-path $@
-
--include $(KERNEL_DEP)
 
 .PHONY: $(KERNEL_CRTBEGIN) $(KERNEL_CRTEND)

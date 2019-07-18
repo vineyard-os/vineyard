@@ -41,7 +41,7 @@ test-vmware: setup $(LOADER) $(KERNEL) $(HDD_VMDK)
 	$(call run,"VMWARE",vmrun start misc/vineyard.vmx)
 
 clean:
-	$(call run,"RM",rm -f $(KERNEL) $(LOADER) $(KERNEL_OBJ) $(LOADER_OBJ) $(KERNEL_DEP))
+	$(call run,"RM",rm -f $(KERNEL) $(LOADER) $(KERNEL_OBJ) $(LOADER_OBJ))
 
 clean-bin: clean
 	$(call run,"RM",rm -rf $(HDD) compile_commands.json .json .deps bin)
@@ -52,7 +52,7 @@ clean-font:
 clean-vbox:
 	$(call run,"CLEAN", VBoxManage unregistervm vineyard 2> /dev/null || true)
 
-distclean: clean-bin clean-font clean-acpica clean-libacpica clean-vbox
+distclean: clean-bin clean-font clean-libacpica clean-vbox
 	rm -rf third-party
 
 clean-libacpica:

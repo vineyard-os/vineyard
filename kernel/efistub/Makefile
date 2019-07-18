@@ -4,7 +4,6 @@ LOADER_SRC_ASM	:= $(shell find kernel/efistub -name *.s -type f)
 LOADER_SRC		:= $(LOADER_SRC_C) $(LOADER_SRC_ASM) $(LOADER_SRC_LIB)
 LOADER_OBJ_C	:= $(addprefix bin/kernel/,$(addsuffix .o,$(LOADER_SRC_C)))
 LOADER_OBJ		:= $(addprefix bin/kernel/,$(addsuffix .o,$(LOADER_SRC)))
-LOADER_DEP		:= $(addprefix .deps/,$(SRC:.c=.d))
 LOADER			:= ../boot/efi/boot/bootx64.efi
 
 LOADER_CFLAGS	:= -Ikernel/include -Ilib/include -Wno-format -Wno-format-security -D STACK=0xFFFFFE0000000000 -D STACK_SIZE=0x21000 -D VINEYARD_LOADER
