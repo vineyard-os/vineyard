@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <vy.h>
 
-#define LVT_TIMER 0xFD
-#define LVT_ERROR 0xFE
+#define LVT_TIMER_INT 0xFD
+#define LVT_ERROR_INT 0xFE
 
 typedef struct {
 	uint16_t limit;

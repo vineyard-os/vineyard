@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <vy.h>
 
-#define IOAPIC_REDTBL 0x10
+#define IOAPIC_REDTBL 0x10U
 
 static list_t ioapic_list;
 
@@ -39,7 +39,7 @@ void ioapic_init(size_t id, uintptr_t addr, size_t irq_base) {
 	ioapic->irqs = ((ioapic_read(ioapic, 1) >> 16) & 0xFF) + 1;
 
 #ifdef CONFIG_ACPI_DEBUG
-	printf("[apic]	ioapic id %zu (%018lx) for %zu IRQs starting at %zu\n", id, addr, ioapic->irqs, irq_base);
+	printf("[apic]	IOAPIC id %zu (%018lx) for %zu IRQs starting at %zu\n", id, addr, ioapic->irqs, irq_base);
 #endif
 
 	node_t *node = malloc(sizeof(*node));
@@ -56,6 +56,6 @@ void ioapic_route(size_t from, uintptr_t flags, size_t to) {
 
 	uintptr_t redtbl_entry = (to & 0xFF) | flags;
 
-	ioapic_write(ioapic, (uint32_t) (IOAPIC_REDTBL + (from << 1) + 1), (uint32_t) (redtbl_entry >> 32) & 0xFFFFFFFF);
-	ioapic_write(ioapic, (uint32_t) (IOAPIC_REDTBL + (from << 1)), redtbl_entry & 0xFFFFFFFF);
+	ioapic_write(ioapic, IOAPIC_REDTBL + (from << 1) + 1U, (redtbl_entry >> 32) & 0xFFFFFFFF);
+	ioapic_write(ioapic, IOAPIC_REDTBL + (from << 1), redtbl_entry & 0xFFFFFFFF);
 }

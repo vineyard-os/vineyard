@@ -47,6 +47,6 @@ void pic_init(void) {
 	outb(PIC2_DATA, ICW4_8086);
 
 	/* mask every IRQ by default except IRQ2 which is used for cascading */
-	outb(PIC1_DATA, 0xFB);
+	outb(PIC1_DATA, 0xFF);
 	outb(PIC2_DATA, 0xFF);
 }

@@ -6,10 +6,14 @@
 
 typedef struct cpu {
 	struct cpu *self;
+
 	gdt_entry_t gdt[GDT_ENTRIES];
 	gdt_gdtr_t gdtr;
+
 	bool apic_lint_nmi0;
 	bool apic_lint_nmi1;
+	uint32_t apic_timer_ticks_per_ms;
+
 	uint8_t apic_id;
 	uint8_t acpi_id;
 } cpu_t;

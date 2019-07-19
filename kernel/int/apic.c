@@ -4,9 +4,11 @@
 #include <cpu/msr.h>
 #include <int/apic.h>
 #include <int/idt.h>
+#include <int/isr.h>
 #include <int/ioapic.h>
 #include <int/pic.h>
 #include <mm/virtual.h>
+#include <time/pit.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <vy.h>
@@ -16,6 +18,9 @@
 #define LVT_TYPE_SMI       0x00000200
 #define LVT_TYPE_NMI       0x00000400
 #define LVT_TYPE_EXTINT    0x00000700
+
+#define LVT_TIMER_PERIODIC 0x00020000
+#define LVT_TIMER_ONE_SHOT 0x00000000
 
 #define MADT_TYPE_LAPIC      0x00
 #define MADT_TYPE_IOAPIC     0x01
@@ -39,7 +44,24 @@
 #define APIC_LVT_LINT1  0x36
 #define APIC_LVT_ERROR  0x37
 
+/* APIC timer initial count register */
+#define APIC_TIMER_ICR  0x38
+/* APIC timer current count register */
+#define APIC_TIMER_CCR  0x39
+/* APIC timer divide configuration register */
+#define APIC_TIMER_DCR  0x3E
+
 #define SVR_ENABLED 0x100
+
+/* possible values for the APIC timer DCR */
+#define DCR_1   0xB
+#define DCR_2   0x0
+#define DCR_4   0x1
+#define DCR_8   0x2
+#define DCR_16  0x3
+#define DCR_32  0x8
+#define DCR_64  0x9
+#define DCR_128 0xA
 
 typedef struct {
 	uint8_t type;
@@ -91,7 +113,7 @@ typedef struct {
 static uintptr_t lapic_addr;
 static volatile uint32_t *apic_mmio;
 
-vy_unused static uint64_t apic_read(size_t reg) {
+static uint64_t apic_read(size_t reg) {
 	return apic_mmio[reg << 2];
 }
 
@@ -117,6 +139,10 @@ void apic_init(void) {
 	bool bsp_apic = false;
 
 	uintptr_t ptr = (uintptr_t) madt + sizeof(struct acpi_table_header) + sizeof(madt_extended_t);
+
+	if(madt_flags & ACPI_MADT_PCAT_COMPAT) {
+		pic_init();
+	}
 
 	while(ptr < end) {
 		madt_entry_t *entry = (madt_entry_t *) ptr;
@@ -220,10 +246,6 @@ void apic_init(void) {
 
 		ptr += entry->len;
 	}
-
-	if(madt_flags & ACPI_MADT_PCAT_COMPAT) {
-		pic_init();
-	}
 }
 
 void apic_enable(void) {
@@ -237,6 +259,7 @@ void apic_enable(void) {
 	msr_write(MSR_APIC_BASE, apic_base);
 
 	/* set the spurious interrupt vector */
+	apic_write(APIC_SVR, 0);
 	apic_write(APIC_SVR, SVR_ENABLED | 0xFF);
 
 	/* reset the error status */
@@ -246,11 +269,28 @@ void apic_enable(void) {
 	apic_write(APIC_LVT_LINT0, cpu->apic_lint_nmi0 ? LVT_TYPE_NMI : LVT_MASKED);
 	apic_write(APIC_LVT_LINT1, cpu->apic_lint_nmi1 ? LVT_TYPE_NMI : LVT_MASKED);
 	apic_write(APIC_LVT_TIMER, LVT_MASKED);
-	apic_write(APIC_LVT_ERROR, LVT_ERROR);
+	apic_write(APIC_LVT_ERROR, LVT_ERROR_INT);
 
 	/* reset the priority so we accept all interrupts */
 	apic_write(APIC_TPR, 0);
 
 	/* ack any outstounding interrupts */
 	apic_ack();
+
+	apic_write(APIC_LVT_TIMER, LVT_MASKED);
+	apic_write(APIC_TIMER_ICR, 0xFFFFFFFF);
+	apic_write(APIC_TIMER_DCR, DCR_128);
+	pit_wait(10);
+
+	cpu->apic_timer_ticks_per_ms = (uint32_t) (0xFFFFFFFF - apic_read(APIC_TIMER_CCR)) * 128U / 10U;
+}
+
+void apic_timer_monotonic(uint32_t ms, isr_handler_t handler) {
+	cpu_t *cpu = cpu_get();
+
+	isr_register(LVT_TIMER_INT, handler);
+
+	apic_write(APIC_LVT_TIMER, LVT_TIMER_PERIODIC | LVT_TYPE_FIXED | LVT_TIMER_INT);
+	apic_write(APIC_TIMER_ICR, ms * cpu->apic_timer_ticks_per_ms / 16U);
+	apic_write(APIC_TIMER_DCR, DCR_16);
 }
