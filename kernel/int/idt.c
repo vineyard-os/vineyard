@@ -94,8 +94,8 @@ void idt_init(void) {
 	idt_set(54, &isr_handle_irq22, 0x8E);
 	idt_set(55, &isr_handle_irq23, 0x8E);
 
-	idt_set(LVT_TIMER, &isr_handle_lvt_timer, 0x8E);
-	idt_set(LVT_ERROR, &isr_handle_lvt_error, 0x8E);
+	idt_set(0xFD, &isr_handle_lvt_timer, 0x8E);
+	idt_set(0xFE, &isr_handle_lvt_error, 0x8E);
 	idt_set(0xFF, &isr_handle_spurious, 0x8E);
 
 	idtr.base = (uintptr_t) idt;
