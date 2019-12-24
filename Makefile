@@ -7,15 +7,16 @@ VM_NAME			?= vineyard
 include config/all
 
 BUILDER			:= ../tools/image-builder/builder
+LOADER			:= ../boot/efi/boot/bootx64.efi
 
 hdd: $(HDD)
 
 include kernel/Makefile
 
-$(LOADER): $(HDD)
-	cd ../loader; make install
+$(LOADER):
+	make -C ../loader
 
-$(HDD): $(LOADER)
+$(HDD): $(LOADER) $(KERNEL)
 	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)
 
 $(HDD_VMDK): $(LOADER) $(KERNEL)
@@ -24,20 +25,20 @@ $(HDD_VMDK): $(LOADER) $(KERNEL)
 $(HDD_VDI): $(LOADER) $(KERNEL)
 	$(call run,"BUILD",$(BUILDER) hdd.yaml --vdi | bash)
 
-test: setup $(LOADER) $(KERNEL) $(HDD)
+test: setup $(HDD)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS))
 
-test-gdb: setup $(LOADER) $(KERNEL) $(HDD)
+test-gdb: setup $(HDD)
 	$(call run_normal,"QEMU",$(EMU) $(EMUFLAGS) -s -S)
 
-test-vbox: setup $(LOADER) $(KERNEL) $(HDD_VDI)
+test-vbox: setup $(HDD_VDI)
 	if ! $(VBOXMANAGE) list vms | grep -q \"vineyard\"; then $(VBOXMANAGE) registervm `pwd`/misc/vineyard.vbox; fi
 	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium none 2> /dev/null || true
 	$(VBOXMANAGE) closemedium disk $(HDD_VDI)
 	$(VBOXMANAGE) storageattach $(VM_NAME) --storagectl "SATA" --port 0 --device 0 --medium $(HDD_VDI) --type hdd
 	$(VBOXMANAGE) startvm $(VM_NAME) | grep -v 'VM "$(VM_NAME)"' || true
 
-test-vmware: setup $(LOADER) $(KERNEL) $(HDD_VMDK)
+test-vmware: setup $(HDD_VMDK)
 	if ! command -v vmrun &> /dev/null; then echo "Error: VMWare Workstation is not installed"; fi
 	if ! grep -q bin/hdd.vmdk misc/vineyard.vmx; then echo -n 'nvme0:0.fileName = "' >> misc/vineyard.vmx && echo -n $(shell pwd) >> misc/vineyard.vmx && echo -n '/bin/hdd.vmdk"' >> misc/vineyard.vmx; fi
 	$(call run,"VMWARE",vmrun start misc/vineyard.vmx)

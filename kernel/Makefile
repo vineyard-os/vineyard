@@ -25,12 +25,13 @@ ACPICA_CFLAGS	:= $(filter-out -fsanitize=undefined,$(KERNEL_CFLAGS))
 
 kernel: $(KERNEL) ## build the kernel
 
-$(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a $(HDD)
+$(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a
 	mkdir -p $(dir $@)
 	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_OBJ) $(KERNEL_LDFLAGS) -o $@)
+
+install: $(KERNEL)
 	mmd -i $(HDD).0 ::/efi -D s || true
 	mmd -i $(HDD).0 ::/efi/boot -D s || true
-	mcopy -i $(HDD).0 ../boot/efi/boot/bootx64.efi ::/efi/boot/bootx64.efi -D o
 	mcopy -i $(HDD).0 ../boot/kernel ::/kernel -D o
 	$(BUILDER) hdd.yaml -m 0 --vmdk --vdi | bash
 
@@ -65,4 +66,4 @@ kernel/driver/graphics/font.c:
 kernel/include/kconfig.h: Kconfig .config
 	genconfig --header-path $@
 
-.PHONY: $(KERNEL_CRTBEGIN) $(KERNEL_CRTEND)
+.PHONY: $(KERNEL_CRTBEGIN) $(KERNEL_CRTEND) install kernel
