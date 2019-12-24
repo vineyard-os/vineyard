@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <driver/uart.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
