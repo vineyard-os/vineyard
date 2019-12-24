@@ -12,6 +12,7 @@
       <Paravirt provider="Default"/>
       <Display VRAMSize="9"/>
       <RemoteDisplay enabled="false"/>
+      <Chipset type="ICH9"/>
       <BIOS>
         <IOAPIC enabled="true"/>
       </BIOS>
