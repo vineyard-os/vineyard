@@ -5,10 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static size_t nvme_last_id = 0;
+
 nvme_t *nvme_init(uint8_t bus, uint8_t slot, uint8_t function) {
 	nvme_t *controller = calloc(1, sizeof(*controller));
 	pci_bar_t bar;
 
+	controller->num = nvme_last_id++;
 	pci_config_bar(bus, slot, function, 0, &bar);
 
 	/* allocate two pages; one for the registers, one for the doorbells */

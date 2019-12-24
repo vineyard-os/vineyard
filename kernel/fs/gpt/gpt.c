@@ -1,5 +1,6 @@
 #include <fs/fat32.h>
 #include <fs/gpt.h>
+#include <fs/block.h>
 #include <fs/btrfs.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +31,10 @@ void gpt_init(nvme_ns_t *ns) {
 		} else if(fat32_check_partition(ns, start, end - start)) {
 			printf(", fat32");
 		}
+
+		block_t *block = malloc(sizeof(block_t));
+		asprintf(&block->name, "nvme%zun%up%zu", ns->controller->num, ns->id, i);
+		block_add(block);
 
 		printf("\n");
 	}

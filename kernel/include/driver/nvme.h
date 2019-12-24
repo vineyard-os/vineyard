@@ -91,6 +91,7 @@ typedef struct {
 } nvme_ns_t;
 
 typedef struct nvme {
+	size_t num;
 	uintptr_t base;
 	nvme_reg_t volatile *reg;
 	uint32_t doorbell_stride;
@@ -108,7 +109,6 @@ typedef struct nvme {
 
 	nvme_cq_t io_cq;
 	nvme_sq_t io_sq;
-
 } nvme_t;
 
 /* Figure 111, p. 129 of version 1.3d */
