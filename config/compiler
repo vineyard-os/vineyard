@@ -10,35 +10,23 @@ LLD				:= ld.lld
 LLD-LINK		:= lld-link
 
 GCC				:= x86_64-elf-gcc
-GCC_EFI			:= x86_64-w64-mingw32-gcc
 
 AS				:= yasm
 AR				:= x86_64-elf-ar
 
 ASFLAGS			:= -felf64
-EFI_ASFLAGS		:= -fwin64
 
 GCC_CFLAGS		:= $(CFLAGS) -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
 GCC_LDFLAGS		:= $(LDFLAGS) -z max-page-size=0x1000 -nostdlib -lgcc -ffreestanding
-GCC_EFI_CFLAGS	:= $(CFLAGS)
-GCC_EFI_LDFLAGS	 = -nostdlib -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main -o $(LOADER)
 
 ifndef USE_GCC
 	CC			:= $(CLANG)
 	LD			:= $(LLD)
 	CFLAGS		:= $(CFLAGS) -Wmissing-variable-declarations -Wused-but-marked-unused
-	EFI_CC		:= $(CC)
-	EFI_LD		:= $(LLD-LINK)
-	EFI_CFLAGS	:= $(CFLAGS) -flto -target x86_64-pc-win32-coff
-	EFI_LDFLAGS	 = -subsystem:efi_application -nodefaultlib -dll -WX -entry:efi_main -out:$(LOADER)
 	CFLAGS		:= $(CFLAGS) -target x86_64-pc-elf
 else
 	CC			:= $(GCC)
 	LD			:= $(CC)
-	EFI_CC		:= $(GCC_EFI)
-	EFI_LD		:= $(EFI_CC)
 	CFLAGS		:= $(CFLAGS) -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
 	LDFLAGS		:= $(LDFLAGS) -z max-page-size=0x1000 -nostdlib -lgcc -ffreestanding
-	EFI_CFLAGS	:= $(CFLAGS)
-	EFI_LDFLAGS	 = -nostdlib -Wl,-dll -shared -Wl,--subsystem,10 -e efi_main -o $(LOADER)
 endif

@@ -11,7 +11,9 @@ BUILDER			:= ../tools/image-builder/builder
 hdd: $(HDD)
 
 include kernel/Makefile
-include kernel/efistub/Makefile
+
+$(LOADER):
+	cd ../loader; make
 
 $(HDD): $(LOADER)
 	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)

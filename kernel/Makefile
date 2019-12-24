@@ -38,13 +38,11 @@ bin/libacpica.a: $(ACPICA_OBJ)
 	$(call run,AR,$(AR) rcs $@ $^)
 
 bin/acpica/%.c.o: %.c
-	mkdir -p $(dir .deps/$@)
-	mkdir -p $(dir .json/$(dir $@))
 	mkdir -p $(dir bin/kernel/$<)
 ifndef USE_GCC
-	$(call run,"CC",$(CC) $(CFLAGS) $(ACPICA_CFLAGS) -c $< -o $@ -MF .deps/$(@:.o=.d) -MJ .json/$@.json)
+	$(call run,"CC",$(CC) $(CFLAGS) $(ACPICA_CFLAGS) -c $< -o $@)
 else
-	$(call run,"CC",$(CC) $(CFLAGS) $(ACPICA_CFLAGS) -c $< -o $@ -MF .deps/$(@:.o=.d))
+	$(call run,"CC",$(CC) $(CFLAGS) $(ACPICA_CFLAGS) -c $< -o $@)
 endif
 
 bin/kernel/%.c.o: %.c
@@ -52,9 +50,9 @@ bin/kernel/%.c.o: %.c
 	mkdir -p $(dir .json/$(dir $@))
 	mkdir -p $(dir bin/kernel/$<)
 ifndef USE_GCC
-	$(call run,"CC",$(CC) $(CFLAGS) $(KERNEL_CFLAGS) -c $< -o $@ -MF .deps/$(@:.o=.d) -MJ .json/$@.json)
+	$(call run,"CC",$(CC) $(CFLAGS) $(KERNEL_CFLAGS) -c $< -o $@)
 else
-	$(call run,"CC",$(CC) $(CFLAGS) $(KERNEL_CFLAGS) -c $< -o $@ -MF .deps/$(@:.o=.d))
+	$(call run,"CC",$(CC) $(CFLAGS) $(KERNEL_CFLAGS) -c $< -o $@)
 endif
 
 bin/kernel/%.s.o: %.s

@@ -32,7 +32,6 @@ define run_normal
 	$(2);
 endef
 
-include config/acpica
 include config/compiler
 include config/output-mode
 include config/qemu
