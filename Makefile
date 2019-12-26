@@ -40,7 +40,7 @@ test-vbox: setup $(HDD_VDI)
 
 test-vmware: setup $(HDD_VMDK)
 	if ! command -v vmrun &> /dev/null; then echo "Error: VMWare Workstation is not installed"; fi
-	if ! grep -q bin/hdd.vmdk misc/vineyard.vmx; then echo -n 'nvme0:0.fileName = "' >> misc/vineyard.vmx && echo -n $(shell pwd) >> misc/vineyard.vmx && echo -n '/bin/hdd.vmdk"' >> misc/vineyard.vmx; fi
+	if ! grep -q hdd.vmdk misc/vineyard.vmx; then echo -n 'nvme0:0.fileName = "' >> misc/vineyard.vmx && echo -n $(shell pwd) >> misc/vineyard.vmx && echo -n '/../hdd.vmdk"' >> misc/vineyard.vmx; fi
 	$(call run,"VMWARE",vmrun start misc/vineyard.vmx)
 
 clean:
