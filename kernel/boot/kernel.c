@@ -2,6 +2,7 @@
 #include <boot/info.h>
 #include <cpu/cpu.h>
 #include <driver/nvme.h>
+#include <debug/trace.h>
 #include <efi.h>
 #include <fs/gpt.h>
 #include <mm/physical.h>
@@ -12,7 +13,7 @@
 #include <uefi.h>
 #include <vy.h>
 
-efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy);
+efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy, size_t copy_size);
 
 info_t info;
 
@@ -36,7 +37,7 @@ static bool callback(uint8_t bus, uint8_t slot, uint8_t function) {
 	return true;
 }
 
-efi_status main(efi_handle h, efi_system_table *st, uintptr_t vy_unused copy) {
+efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy, size_t copy_size) {
 	_init();
 
 	info.handle = h;
@@ -46,6 +47,7 @@ efi_status main(efi_handle h, efi_system_table *st, uintptr_t vy_unused copy) {
 	cpu_bsp_init();
 	mm_physical_init();
 	mm_virtual_init();
+	debug_init(copy, copy_size);
 	acpi_init();
 
 	pci_express_init();

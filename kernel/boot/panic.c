@@ -1,4 +1,5 @@
 #include <boot/panic.h>
+#include <debug/trace.h>
 #include <driver/framebuffer.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -24,6 +25,8 @@ void panic(const char * restrict format, ...) {
 	puts("");
 
 	va_end(args);
+
+	debug_trace();
 
 	__asm volatile ("hlt");
 	for(;;);

@@ -1,4 +1,5 @@
 #include <cpu/cr.h>
+#include <debug/trace.h>
 #include <int/apic.h>
 #include <int/isr.h>
 #include <stdio.h>
@@ -50,10 +51,13 @@ void isr_dispatch(cpu_state_t *state) {
 		}
 	}
 
+	debug_trace();
+
 	if(handlers[state->id]) {
 		(*handlers[state->id])(state);
 	} else {
 		printf("no handler for interrupt %zu\n", state->id);
+		for(;;);
 	}
 
 	if(state->id >= 0x20) {
