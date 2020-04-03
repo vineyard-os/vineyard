@@ -15,8 +15,12 @@ void acpi_os_sleep(uint64_t Milliseconds) {
 	pit_wait(Milliseconds);
 }
 
-void acpi_os_stall(vy_unused uint32_t Microseconds) {
-	panic("%s unimplemented", __func__);
+void acpi_os_stall(uint32_t Microseconds) {
+	if(Microseconds > 1000) {
+		pit_wait(Microseconds / 1000);
+	} else {
+		panic("%s(%u us) unimplemented", __func__, Microseconds);
+	}
 }
 
 void acpi_os_wait_events_complete(void) {

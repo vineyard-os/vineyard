@@ -35,10 +35,10 @@ struct non_null_return_data {
     struct source_location location;
 };
 
-struct type_mismatch_info {
+struct type_mismatch_v1 {
     struct source_location location;
     struct type_descriptor *type;
-    uintptr_t alignment;
+    uint8_t alignment;
     uint8_t type_check_kind;
 };
 
@@ -73,7 +73,7 @@ void __ubsan_handle_divrem_overflow(struct overflow_data *data, uintptr_t lhs, u
 void __ubsan_handle_negate_overflow(struct overflow_data *data, uintptr_t old);
 void __ubsan_handle_shift_out_of_bounds(struct shift_out_of_bounds_data *data, uintptr_t lhs, uintptr_t rhs);
 void __ubsan_handle_out_of_bounds(struct out_of_bounds_data *data, uintptr_t index);
-void __ubsan_handle_type_mismatch_v1(struct type_mismatch_info *data, uintptr_t ptr);
+void __ubsan_handle_type_mismatch_v1(struct type_mismatch_v1 *data, uintptr_t ptr);
 void __ubsan_handle_invalid_builtin(struct invalid_builtin_data *data);
 void __ubsan_handle_load_invalid_value(struct invalid_value_data *data, uintptr_t val);
 void __ubsan_handle_builtin_unreachable(struct unreachable_data *data);

@@ -66,11 +66,11 @@ void acpi_irq_process(acpi_handle object) {
 				panic("no IRQ for device %d from '%s'", dev_id, table->source);
 			}
 #ifdef CONFIG_ACPI_DEBUG
-			printf("dev %2d pin INT%c# -> IRQ%zu (from '%s')\n", dev_id, 'A' + table->pin, dev_irq, table->source);
+			printf("dev %2d pin INT%c# -> IRQ%zu (from '%s')\n", dev_id, (char) ('A' + table->pin), dev_irq, table->source);
 #endif
 		} else {
 #ifdef CONFIG_ACPI_DEBUG
-			printf("dev %2d pin INT%c# -> IRQ%u\n", dev_id, 'A' + table->pin, table->source_index);
+			printf("dev %2d pin INT%c# -> IRQ%u\n", dev_id, (char) ('A' + table->pin), table->source_index);
 #endif
 		}
 	}

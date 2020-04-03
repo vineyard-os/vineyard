@@ -25,7 +25,6 @@
 #define PML3_SHIFT 30
 #define PML4_SHIFT 39
 
-// #define PHY(x) ((uintptr_t) (x) - KERNEL_START + 0x100000)
 /* align an address to the nearest page boundary higher or equal to the address */
 #define PAGE_UP(x) ((0xFFF & (x)) ? (((x) + 0x1000) & ~0xFFFUL) : (x))
 

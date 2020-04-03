@@ -73,7 +73,7 @@ void pci_config_bar(uint32_t bus, uint32_t slot, uint32_t function, uint8_t bar,
 			info->size |= (uint64_t) pci_config_read(bus, slot, function, _BAR(bar + 1)) << 32;
 
 			pci_config_write(bus, slot, function, _BAR(bar), info->addr & 0xFFFFFFFF);
-			pci_config_write(bus, slot, function, _BAR(bar + 1), (info->addr >> 32) & 0xFFFFFFFF);
+			pci_config_write(bus, slot, function, _BAR(bar + 1), (uint32_t) (info->addr >> 32) & 0xFFFFFFFF);
 
 			info->size = (~(info->size & 0xFFFFFFFFFFFFFFF0) + 1);
 		} else {
