@@ -14,3 +14,6 @@ char *strncpy(char *dest, const char *src, size_t n) __attribute__((nonnull(1, 2
 int strcmp(const char* a, const char* b) __attribute__((nonnull(1, 2)));
 char *strncat(char *dest, const char *src, size_t n) __attribute__((nonnull(1, 2)));
 char *strdup(const char *str) __attribute__((nonnull(1)));
+char *strchr(const char *str, int c);
+char *strrchr(const char *str, int c);
+char *strchrnul(const char *str, int c);
