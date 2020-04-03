@@ -278,7 +278,7 @@ void mm_virtual_range_set(uintptr_t addr, size_t len, uintptr_t flags) {
 
 void mm_virtual_dump(void) {
 	VM_FOREACH(node) {
-		printf("[vmm]	%#018lx - %#018lx (%#zx pages) [%s]\n", node->start, node->start + node->len - 1, node->len >> 12, (node->flags & VM_USED) ? "used" : "free");
+		printf("vmm: %#018lx - %#018lx (%#zx pages) [%s]\n", node->start, node->start + node->len - 1, node->len >> 12, (node->flags & VM_USED) ? "used" : "free");
 	}
 }
 
@@ -287,8 +287,8 @@ uintptr_t mm_virtual_alloc(size_t pages) {
 		return 0;
 	}
 
-#ifdef VMM_DEBUG
-	printf("[vmm]	%zu pages\n", pages);
+#ifdef CONFIG_VMM_DEBUG
+	printf("vmm: %zu pages\n", pages);
 #endif
 
 	struct vm_node *alloc = NULL;
@@ -309,24 +309,23 @@ uintptr_t mm_virtual_alloc(size_t pages) {
 		alloc->flags &= ~VM_FREE;
 		alloc->flags |= VM_USED;
 
-#ifdef VMM_DEBUG
+#ifdef CONFIG_VMM_DEBUG
 		mm_virtual_dump();
-		printf("----------------------------------------\n");
 #endif
 		return alloc->start;
 	} else {
 		struct vm_node *new = mm_slab_alloc(cache);
 
-#ifdef VMM_DEBUG
-		printf("[vmm]	alloc start = %#018lx, len = %zx [%s]\n", alloc->start, alloc->len, (alloc->flags & VM_USED) ? "used" : "free");
-		if(alloc->next) printf("[vmm]	alloc->next start = %#018lx, len = %zx [%s]\n", alloc->next->start, alloc->next->len, (alloc->next->flags & VM_USED) ? "used" : "free");
+#ifdef CONFIG_VMM_DEBUG
+		printf("vmm: alloc start = %#018lx, len = %zx [%s]\n", alloc->start, alloc->len, (alloc->flags & VM_USED) ? "used" : "free");
+		if(alloc->next) printf("vmm: alloc->next start = %#018lx, len = %zx [%s]\n", alloc->next->start, alloc->next->len, (alloc->next->flags & VM_USED) ? "used" : "free");
 #endif
 
 		new->start = alloc->start + size;
 		new->len = alloc->len - size;
 		new->flags = alloc->flags;
-#ifdef VMM_DEBUG
-		printf("[vmm]	new start = %#018lx, len = %zx [%s]\n", new->start, new->len, (new->flags & VM_USED) ? "used" : "free");
+#ifdef CONFIG_VMM_DEBUG
+		printf("vmm: new start = %#018lx, len = %zx [%s]\n", new->start, new->len, (new->flags & VM_USED) ? "used" : "free");
 #endif
 
 		alloc->len = size;
@@ -335,9 +334,8 @@ uintptr_t mm_virtual_alloc(size_t pages) {
 
 		mm_virtual_insert_after(alloc, new);
 
-#ifdef VMM_DEBUG
+#ifdef CONFIG_VMM_DEBUG
 		mm_virtual_dump();
-		printf("----------------------------------------\n");
 #endif
 
 		return alloc->start;
@@ -364,8 +362,8 @@ size_t mm_virtual_free(uintptr_t addr) {
 		mm_tlb_invlpg(addr + i);
 	}
 
-#ifdef VMM_DEBUG
-	printf("[vmm]	freeing %#018lx (len %zu)\n", addr, free->len);
+#ifdef CONFIG_VMM_DEBUG
+	printf("vmm: freeing %#018lx (len %zu)\n", addr, free->len);
 #endif
 
 	free->flags &= ~VM_USED;
@@ -389,11 +387,6 @@ size_t mm_virtual_free(uintptr_t addr) {
 	//
 	// 	free->len += tmp_len;
 	// }
-
-#ifdef VMM_DEBUG
-	mm_virtual_dump();
-	printf("----------------------------------------\n");
-#endif
 
 	return ret;
 }

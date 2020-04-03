@@ -34,13 +34,7 @@ typedef uintptr_t vy_status_t;
 
 #define no_warn(x) _Pragma(HELPER1(#x))
 
-inline uint64_t min(uint64_t a, uint64_t b) {
-	if(a > b) {
-		return b;
-	}
-
-	return a;
-}
+uint64_t min(uint64_t a, uint64_t b);
 
 void cleanup_vy_free(void *ptr);
 

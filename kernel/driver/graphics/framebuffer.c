@@ -22,57 +22,15 @@ uint32_t framebuffer_pitch = 0;
 uint32_t framebuffer_bpp = 0;
 bool framebuffer_ready = false;
 
-static bool framebuffer_setup(efi_graphics_output_protocol *gop) {
-	size_t max_w = 0;
-	size_t max_h = 0;
-	uint32_t selection = 0;
-	efi_status status;
-
-	for(uint32_t i = 0; i < gop->Mode->MaxMode; i++) {
-		efi_graphics_output_mode_information *mode_info;
-		size_t info_size = sizeof(mode_info);
-		info.st->BootServices->AllocatePool(EfiLoaderData, info_size, (void **) &mode_info);
-
-		status = gop->QueryMode(gop, i, &info_size, &mode_info);
-		EFIERR(status);
-
-		size_t width = mode_info->HorizontalResolution;
-		size_t h = mode_info->VerticalResolution;
-
-		if(!memcmp(EFI_OVMF_SIGNATURE, info.st->FirmwareVendor, 13) && width == 800 && h == 600) {
-			gop->SetMode(gop, i);
-
-			return true;
-		} else if(width > max_w || h > max_h) {
-			max_w = width;
-			max_h = h;
-			selection = i;
-		}
-	}
-
-	if(memcmp(EFI_OVMF_SIGNATURE, info.st->FirmwareVendor, 13) && selection != 0) {
-		gop->SetMode(gop, selection);
-
-		return true;
-	}
-
-	return false;
-}
-
 void framebuffer_init(void) {
-	efi_graphics_output_protocol *gop;
+	efi_graphics_output_mode_information *mode_info = info.gop_mode->Info;
 
-	efi_gop_get(&gop);
-	framebuffer_setup(gop);
-
-	efi_graphics_output_mode_information *mode_info = gop->Mode->Info;
-
-	framebuffer_lfb = (uint32_t *) gop->Mode->FrameBufferBase;
+	framebuffer_lfb = (uint32_t *) info.gop_mode->FrameBufferBase;
 	framebuffer_width = mode_info->HorizontalResolution;
 	framebuffer_height = mode_info->VerticalResolution;
 	framebuffer_bpp = 4;
 	framebuffer_pitch = mode_info->PixelsPerScanLine * framebuffer_bpp;
-	framebuffer_lfb_size = gop->Mode->FrameBufferSize;
+	framebuffer_lfb_size = info.gop_mode->FrameBufferSize;
 
 	offset_1 = framebuffer_bpp;
 	offset_2 = framebuffer_bpp << 1;

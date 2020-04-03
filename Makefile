@@ -14,7 +14,7 @@ hdd: $(HDD)
 include kernel/Makefile
 
 $(LOADER):
-	make -C ../loader
+	make -C ../loader install
 
 $(HDD): $(LOADER) $(KERNEL)
 	$(call run,"BUILD", $(BUILDER) hdd.yaml | bash)

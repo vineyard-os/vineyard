@@ -5,7 +5,6 @@
 #include <mm/page.h>
 #include <mm/physical.h>
 #include <mm/tlb.h>
-#include <mm/uefi.h>
 #include <mm/virtual.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +26,6 @@ struct mm_physical_stack {
 /* make sure that the stack struct is actually the size it is supposed to be (4096 bytes) */
 static_assert(sizeof(struct mm_physical_stack) == 0x1000, "unexpected struct mm_physical_stack size");
 
-#ifdef CONFIG_PMM_DEBUG
 /* strings for printing out EFI memory types */
 static const char *memory_map_types[] = {
 	[EfiReservedMemoryType] = "Reserved",
@@ -46,12 +44,10 @@ static const char *memory_map_types[] = {
 	[EfiPalCode] = "Pal Code",
 	[EfiPersistentMemory] = "Persistent Memory",
 };
-#endif
 
 /* pointer to the level 1 page table holding the stack at index 511 */
 uint64_t *mm_physical_stack_pml1;
-/* page tables for mapping in the stack's address */
-/* TODO: dynamically find the physical addresses */
+
 static uint64_t stack_pml3[512] __attribute__((__aligned__(0x1000)));
 static uint64_t stack_pml2[512] __attribute__((__aligned__(0x1000)));
 static uint64_t stack_pml1[512] __attribute__((__aligned__(0x1000)));
@@ -69,36 +65,31 @@ static void mm_physical_next_stack(uintptr_t addr) {
 }
 
 static void mm_physical_init_stack(void) {
-	{
-		uintptr_t pml4i = (STACK_ADDR >> 39) & 0x1FF;
-		uintptr_t pml3i = (STACK_ADDR >> 30) & 0x1FF;
-		uintptr_t pml2i = (STACK_ADDR >> 21) & 0x1FF;
-		uint64_t *table = (uint64_t *) (uint64_t) cr3_read();
+	struct vm_indices i;
+	mm_virtual_indices(&i, STACK_ADDR);
 
-		/* TODO: maybe check whether page is present? investigate the correct way */
-		if(!(table[pml4i] & PAGE_PRESENT)) {
-			uint64_t stack_pml3_phys = mm_uefi_get_phys((uintptr_t) &stack_pml3);
-			table[pml4i] = stack_pml3_phys | PAGE_PRESENT | PAGE_WRITE;
-		}
+	if(!(i.pml4[i.pml4i] & PAGE_PRESENT)) {
+		i.pml4[i.pml4i] = mm_virtual_get_phys((uintptr_t) &stack_pml3) | PAGE_PRESENT | PAGE_WRITE;
 
-		table = (uint64_t *) (table[pml4i] & ~0xFFFUL);
-
-		if(!(table[pml3i] & PAGE_PRESENT)) {
-			uint64_t stack_pml2_phys = mm_uefi_get_phys((uintptr_t) &stack_pml2);
-			table[pml3i] = stack_pml2_phys | PAGE_PRESENT | PAGE_WRITE;
-		}
-
-		table = (uint64_t *) (table[pml3i] & ~0xFFFUL);
-
-		if(!(table[pml2i] & PAGE_PRESENT)) {
-			uint64_t stack_pml1_phys = mm_uefi_get_phys((uintptr_t) &stack_pml1);
-			table[pml2i] = stack_pml1_phys | PAGE_PRESENT | PAGE_WRITE;
-		}
-
-		mm_physical_stack_pml1 = (uint64_t *) (table[pml2i] & ~0xFFFUL);
+		memset(i.pml3, 0, 0x1000);
 	}
 
-	root_stack_phys = mm_uefi_get_phys((uintptr_t) &root_stack);
+	if(!(i.pml3[i.pml3i] & PAGE_PRESENT)) {
+		i.pml3[i.pml3i] = mm_virtual_get_phys((uintptr_t) &stack_pml2) | PAGE_PRESENT | PAGE_WRITE;
+
+		memset(i.pml2, 0, 0x1000);
+	}
+
+	if(!(i.pml2[i.pml2i] & PAGE_PRESENT)) {
+		i.pml2[i.pml2i] = mm_virtual_get_phys((uintptr_t) &stack_pml1) | PAGE_PRESENT | PAGE_WRITE;
+
+		memset(i.pml1, 0, 0x1000);
+	}
+
+	mm_physical_stack_pml1 = (uint64_t *) i.pml1;
+
+	root_stack_phys = mm_virtual_get_phys((uintptr_t) &root_stack);
+	mm_virtual_map(root_stack_phys, STACK_ADDR, 1, PAGE_PRESENT | PAGE_WRITE);
 
 	mm_physical_next_stack(root_stack_phys);
 	memset(root_stack, 0, sizeof(*root_stack));
@@ -148,30 +139,31 @@ void mm_physical_mark_free(uint64_t addr) {
 	}
 }
 
-void mm_physical_init(void) {
-	size_t up = 0;
+static vy_unused const char *get_memory_type(efi_memory_type type) {
+	if(type <= EfiPersistentMemory) {
+		return memory_map_types[type];
+	} else {
+		return "invalid type";
+	}
+}
 
+void mm_physical_init(void) {
 	mm_physical_init_stack();
 
-	for(size_t _mmap_i = 0; _mmap_i < info.efi_memory_map_entries; _mmap_i++) {
-		efi_memory_descriptor *desc = (void *) ((uint8_t *) info.efi_memory_map + (info.efi_memory_map_descriptor_size * _mmap_i));
-		uintptr_t start = (uintptr_t) desc->PhysicalStart;
-		size_t size = desc->NumberOfPages << PAGE_SHIFT;
-		size_t pages = desc->NumberOfPages;
-		efi_memory_type type = (efi_memory_type) desc->Type;
-
-		if(type != EfiMemoryMappedIO && type != EfiMemoryMappedIOPortSpace && type != EfiUnusableMemory) {
-			up += size;
-		}
+	for(size_t i = 0; i < info.efi_memory_map_entries; i++) {
+		efi_memory_descriptor *desc = (void *) ((uint8_t *) info.efi_memory_map + (info.efi_memory_map_descriptor_size * i));
 
 #ifdef CONFIG_PMM_DEBUG
-		uintptr_t end = (uintptr_t) desc->PhysicalStart + (desc->NumberOfPages << PAGE_SHIFT) - 1;
-		printf("[pmm]	normal: %#018lx - %#018lx (%zu KiB) [%s]\n", start, end, size >> 10, memory_map_types[type]);
+		if(!desc->NumberOfPages) {
+			printf("[efi]	entry %zu invalid size\n", i);
+		} else {
+			printf("[efi]	normal: %#018lx - %#018lx (%zu pages) [%s]\n", desc->PhysicalStart, desc->PhysicalStart + (desc->NumberOfPages << 12), desc->NumberOfPages, get_memory_type(desc->Type));
+		}
 #endif
 
-		if(type == EfiConventionalMemory || type == EfiBootServicesCode || type == EfiBootServicesData) {
-			for(size_t i = 0; i < pages; i++) {
-				mm_physical_mark_free(start + (i << PAGE_SHIFT));
+		if(desc->Type == EfiConventionalMemory || desc->Type == EfiBootServicesCode || desc->Type == EfiBootServicesData) {
+			for(size_t j = 0; j < desc->NumberOfPages; j++) {
+				mm_physical_mark_free(desc->PhysicalStart + (j << PAGE_SHIFT));
 			}
 		}
 	}

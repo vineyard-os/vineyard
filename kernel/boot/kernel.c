@@ -13,7 +13,7 @@
 #include <uefi.h>
 #include <vy.h>
 
-efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy, size_t copy_size);
+efi_status main(info_t *passed_info);
 
 info_t info;
 
@@ -37,17 +37,16 @@ static bool callback(uint8_t bus, uint8_t slot, uint8_t function) {
 	return true;
 }
 
-efi_status main(efi_handle h, efi_system_table *st, uintptr_t copy, size_t copy_size) {
+efi_status main(info_t *passed_info) {
 	_init();
 
-	info.handle = h;
-	info.st = st;
+	info = *passed_info;
 
 	efi_init();
 	cpu_bsp_init();
 	mm_physical_init();
 	mm_virtual_init();
-	debug_init(copy, copy_size);
+	debug_init(info.copy, info.copy_size);
 	acpi_init();
 
 	pci_express_init();

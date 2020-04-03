@@ -5,7 +5,6 @@
 
 #define EFIERR(x) if(EFI_ERROR((x))) { printf("EFIERR %#lx @ %s:%d\n", (x), __FILE__, __LINE__); for(;;); }
 
-
 void efi_init(void);
 efi_status efi_print(const char *str);
 

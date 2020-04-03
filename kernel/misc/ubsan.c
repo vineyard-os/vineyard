@@ -78,7 +78,7 @@ void __ubsan_handle_type_mismatch_v1(struct type_mismatch_v1 *data, uintptr_t pt
 	if(!ptr) {
 		panic("%s null pointer of type %s\n", ubsan_type_check_kind(data->type_check_kind), data->type->name);
 	} else if(data->alignment && (ptr & (data->alignment - 1U)) != 0) {
-		panic("unaligned access to %#lx (of type %s), which requires 2^%lu-byte alignment\n", ptr, data->type->name, data->alignment);
+		panic("unaligned access to %#lx (of type %s), which requires 2^%hhu-byte alignment\n", ptr, data->type->name, data->alignment);
 	} else {
 		panic("%s %#lx (of type %s)\n", ubsan_type_check_kind(data->type_check_kind), ptr, data->type->name);
 	}

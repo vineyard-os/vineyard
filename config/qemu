@@ -1,3 +1,5 @@
 EMU				?= qemu-system-x86_64
-EMUFLAGS		:= -enable-kvm -drive if=pflash,format=raw,readonly,file=../third-party/ovmf/OVMF.fd -M accel=kvm:tcg -net none -serial stdio -vga std -m 1G -smp 2 -machine q35 -drive if=none,format=raw,file=$(HDD),id=vy -device nvme,drive=vy,serial=vineyard
+EMUFLAGS		:= -enable-kvm -drive if=pflash,format=raw,readonly,file=../third-party/ovmf/OVMF.fd -M accel=kvm:tcg -serial stdio
+EMUFLAGS		+= -vga std -m 1G -smp 2 -machine q35 -drive if=none,format=raw,file=$(HDD),id=vy -device nvme,drive=vy,serial=vineyard
+EMUFLAGS		+= -netdev bridge,id=bridge,br=qemu-vy -device virtio-net-pci,netdev=bridge
 EMUFLAGS_DEBUG	:= -d int,cpu_reset

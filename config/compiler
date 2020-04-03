@@ -9,10 +9,10 @@ CLANG			:= clang
 LLD				:= ld.lld
 LLD-LINK		:= lld-link
 
-GCC				:= x86_64-elf-gcc
+GCC				:= x86_64-vineyard-gcc
 
 AS				:= yasm
-AR				:= x86_64-elf-ar
+AR				:= x86_64-vineyard-ar
 
 ASFLAGS			:= -felf64
 
@@ -22,11 +22,11 @@ GCC_LDFLAGS		:= $(LDFLAGS) -z max-page-size=0x1000 -nostdlib -lgcc -ffreestandin
 ifndef USE_GCC
 	CC			:= $(CLANG)
 	LD			:= $(LLD)
-	CFLAGS		:= $(CFLAGS) -Wmissing-variable-declarations -Wused-but-marked-unused
+	CFLAGS		:= $(CFLAGS) -Wmissing-variable-declarations
 	CFLAGS		:= $(CFLAGS) -target x86_64-pc-elf
 else
 	CC			:= $(GCC)
 	LD			:= $(CC)
-	CFLAGS		:= $(CFLAGS) -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
+	CFLAGS		:= $(CFLAGS) -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2 -Wno-address-of-packed-member
 	LDFLAGS		:= $(LDFLAGS) -z max-page-size=0x1000 -nostdlib -lgcc -ffreestanding
 endif

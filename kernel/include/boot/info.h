@@ -11,6 +11,10 @@ typedef struct {
 	uint64_t efi_memory_map_key;
 	size_t efi_memory_map_descriptor_size;
 	void *rsdp;
+	efi_graphics_output_mode *gop_mode;
+
+	uintptr_t copy;
+	size_t copy_size;
 } info_t;
 
 extern info_t info;
