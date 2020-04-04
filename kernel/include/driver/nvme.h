@@ -171,7 +171,7 @@ nvme_cq_entry_t *nvme_command_cqe(nvme_sq_t *sq);
 
 nvme_t *nvme_init(uint8_t bus, uint8_t slot, uint8_t function);
 
-void nvme_rw_read(nvme_ns_t *ns, uint64_t lba, char *buf);
+void nvme_rw_read(nvme_ns_t *ns, uint64_t lba, uint16_t count, char *buf);
 void nvme_read(nvme_ns_t *ns, uint64_t physical, size_t length, char *buf);
 
 void nvme_ns_probe(nvme_t *controller, uint8_t ns);
