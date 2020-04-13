@@ -1,0 +1,3 @@
+#!/bin/bash
+ip link set qemu-vy down
+brctl delbr qemu-vy

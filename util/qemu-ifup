@@ -1,0 +1,3 @@
+#!/bin/bash
+brctl addbr qemu-vy
+ip link set qemu-vy up

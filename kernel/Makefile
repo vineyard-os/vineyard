@@ -29,12 +29,6 @@ $(KERNEL): kernel/include/kconfig.h $(KERNEL_OBJ) bin/libacpica.a
 	mkdir -p $(dir $@)
 	$(call run,"LD",$(LD) $(LDFLAGS) $(KERNEL_OBJ) $(KERNEL_LDFLAGS) -o $@)
 
-install: $(KERNEL)
-	mmd -i $(HDD).0 ::/efi -D s || true
-	mmd -i $(HDD).0 ::/efi/boot -D s || true
-	mcopy -i $(HDD).0 ../boot/kernel ::/kernel -D o
-	$(BUILDER) hdd.yaml -m 0 --vmdk --vdi | bash
-
 bin/libacpica.a: $(ACPICA_OBJ)
 	$(call run,AR,$(AR) rcs $@ $^)
 
