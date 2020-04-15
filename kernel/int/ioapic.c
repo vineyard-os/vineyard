@@ -38,13 +38,11 @@ void ioapic_init(size_t id, uintptr_t addr, size_t irq_base) {
 	ioapic->irq_base = irq_base;
 	ioapic->irqs = ((ioapic_read(ioapic, 1) >> 16) & 0xFF) + 1;
 
-#ifdef CONFIG_ACPI_DEBUG
+	#ifdef CONFIG_ACPI_DEBUG
 	printf("[apic]	IOAPIC id %zu (%018lx) for %zu IRQs starting at %zu\n", id, addr, ioapic->irqs, irq_base);
-#endif
+	#endif
 
-	node_t *node = malloc(sizeof(*node));
-	node->data = ioapic;
-	list_append(&ioapic_list, node);
+	list_append_data(&ioapic_list, ioapic);
 }
 
 /* route an IRQ to an interrupt */

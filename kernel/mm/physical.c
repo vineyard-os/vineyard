@@ -165,6 +165,8 @@ void mm_physical_init(void) {
 			for(size_t j = 0; j < desc->NumberOfPages; j++) {
 				mm_physical_mark_free(desc->PhysicalStart + (j << PAGE_SHIFT));
 			}
+		} else if(desc->Type == EfiACPIReclaimMemory) {
+			mm_virtual_map(desc->PhysicalStart, desc->PhysicalStart, desc->NumberOfPages, PAGE_PRESENT | PAGE_NX);
 		}
 	}
 }

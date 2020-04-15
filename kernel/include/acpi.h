@@ -26,3 +26,5 @@ typedef struct {
 
 void acpi_init(void);
 void acpi_shutdown(void);
+
+void acpi_tables_init(void);

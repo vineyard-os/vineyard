@@ -51,11 +51,11 @@ void isr_dispatch(cpu_state_t *state) {
 		}
 	}
 
-	debug_trace();
 
 	if(handlers[state->id]) {
 		(*handlers[state->id])(state);
 	} else {
+		debug_trace();
 		printf("no handler for interrupt %zu\n", state->id);
 		for(;;);
 	}

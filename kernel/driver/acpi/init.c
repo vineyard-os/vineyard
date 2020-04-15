@@ -91,6 +91,8 @@ static acpi_status acpi_walk_devices(acpi_handle object, uint32_t nesting_level,
 void acpi_init(void) {
 	acpi_status status;
 
+	acpi_tables_init();
+
 	status = acpi_initialize_subsystem();
 	if(ACPI_FAILURE(status)) {
 		acpi_terminate();
